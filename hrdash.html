@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>HR Dashboard</title>
+  <link rel="stylesheet" href="stylehr.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <!-- Header -->
+  <header>
+    <h1>HR Dashboard</h1>
+    <div class="header-actions">
+      <button id="refreshBtn" class="btn-small" onclick="loadHRDashboardData()" title="Refresh">🔄 Refresh</button>
+      <button class="btn-primary" onclick="window.location.href='hr-profile.html'" title="Manage HR Profiles">👥 HR Profiles</button>
+      <button class="logout-btn" id="navLogout" onclick="logout()">Logout</button>
+    </div>
+  </header>
+
+  <!-- Layout -->
+  <main class="dashboard">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <!-- Profile -->
+      <div class="profile-card">
+        <div class="profile-img">
+          <img src="https://randomuser.me/api/portraits/men/75.jpg" alt="Profile">
+        </div>
+        <h2>John HR</h2>
+        <p>HR Manager</p>
+        <p class="profile-email">john.hr@example.com</p>
+      </div>
+
+      <!-- Birthdays -->
+      <div class="birthday-card">
+        <h3>Upcoming Birthdays</h3>
+        <ul id="birthdayList">
+          <li>🎂 Alice Johnson — 22 Sept</li>
+          <li>🎂 Mark Smith — 28 Sept</li>
+          <li>🎂 Sophia Lee — 2 Oct</li>
+        </ul>
+      </div>
+
+      <!-- Attendance -->
+      <div class="attendance-card">
+        <button id="takeAttendanceBtn" class="btn-primary" onclick="takeAttendance()">Take Attendance</button>
+        <p class="muted">Manually mark attendance for a date.</p>
+      </div>
+    </aside>
+
+    <!-- Main content -->
+    <section class="main-content">
+
+      <!-- Stats -->
+      <div class="stats">
+        <div class="stat-card"><div class="stat-icon">👥</div><h2 id="totalEmployees">0</h2><p>Total Employees</p></div>
+        <div class="stat-card"><div class="stat-icon">✅</div><h2 id="activeToday">0</h2><p>Active Today</p></div>
+        <div class="stat-card"><div class="stat-icon">📅</div><h2 id="leavesToday">0</h2><p>Leaves Today</p></div>
+        <div class="stat-card"><div class="stat-icon">⏳</div><h2 id="pendingRequests">0</h2><p>Pending Requests</p></div>
+      </div>
+
+      <!-- Chart + Holidays -->
+      <div class="two-column">
+        <div class="personal-details">
+          <h3>Real-Time Leave Overview</h3>
+          <canvas id="leaveChart" height="140"></canvas>
+          <div class="chart-controls">
+            <button onclick="refreshLeaveChart()" class="btn-small">🔄 Refresh Chart</button>
+            <span id="chartLastUpdated" class="chart-timestamp">Last updated: Never</span>
+          </div>
+        </div>
+
+        <div class="upcoming-holidays">
+          <h3>Upcoming Holidays</h3>
+          <ul id="holidayList"><li>Loading holidays...</li></ul>
+        </div>
+      </div>
+
+      <!-- Leave History + Approvals -->
+      <div class="two-column">
+        <div class="personal-details">
+          <h3>Leave History</h3>
+          <div class="table-container">
+            <table class="leave-table">
+              <thead><tr><th>Employee</th><th>From</th><th>To</th><th>Status</th></tr></thead>
+              <tbody id="leaveRequestsTable">
+                <tr><td>Maria Lopez</td><td>2025-09-25</td><td>2025-09-27</td><td><span class="status-badge status-rejected">Rejected</span></td></tr>
+                <tr><td>Daniel Green</td><td>2025-09-20</td><td>2025-09-22</td><td><span class="status-badge status-approved">Approved</span></td></tr>
+                <tr><td>Alice Johnson</td><td>2025-09-15</td><td>2025-09-17</td><td><span class="status-badge status-pending">Pending</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="personal-details">
+          <h3>Leave Approvals</h3>
+          <div class="table-container">
+            <table class="leave-table">
+              <thead><tr><th>Employee</th><th>Dates</th><th>Type</th><th>Reason</th><th>Action</th></tr></thead>
+              <tbody id="approvalsTable">
+                <tr><td colspan="5">Loading pending requests...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Regularization Requests Management -->
+      <div class="personal-details regularization-card">
+        <h3>Regularization Requests</h3>
+        <div class="table-container">
+          <table class="leave-table">
+            <thead>
+              <tr>
+                <th>Employee</th>
+                <th>Date</th>
+                <th>Reason</th>
+                <th>Status</th>
+                <th>Applied Date</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="regularizationTable">
+              <tr><td colspan="6">Loading regularization requests...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+
+      <!-- Today's Attendance -->
+      <div class="personal-details attendance-card">
+        <h3>Today's Attendance</h3>
+        <div class="table-container">
+          <table class="leave-table">
+            <thead><tr><th>Employee</th><th>Status</th><th>Punch In</th><th>Punch Out</th><th>Type</th></tr></thead>
+            <tbody id="todayAttendanceTable">
+              <tr><td colspan="5">Loading today's attendance...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Employee Directory -->
+      <div class="personal-details directory-card">
+        <h3>Employee Directory</h3>
+        <div class="dir-controls">
+          <input type="text" id="employeeSearch" placeholder="Search employees by name / email / dept" />
+          <button id="clearSearchBtn" class="btn-small">Clear</button>
+        </div>
+        <div class="table-container">
+          <table class="leave-table">
+            <thead><tr><th>Name</th><th>Email</th><th>Department</th><th>Action</th></tr></thead>
+            <tbody id="employeeTable">
+              <tr><td colspan="4">Loading employees...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+  <!-- Attendance Modal -->
+<div id="attendanceModal" class="attendance-modal" aria-hidden="true">
+  <div class="attendance-content">
+    <span class="close-btn" id="closeAttendance" onclick="closeAttendanceModal()">&times;</span>
+    <h2>Take Attendance</h2>
+    
+    <label for="attendanceDate">Date:</label>
+    <input type="date" id="attendanceDate" value="" />
+
+    <div id="attendanceList" class="attendance-list">
+      <!-- Employee rows will be populated by JS -->
+    </div>
+
+    <div class="modal-actions">
+      <button id="saveAttendanceBtn" class="btn-primary" onclick="saveAttendance()">Save Attendance</button>
+      <button id="cancelAttendanceBtn" class="btn-secondary" onclick="closeAttendanceModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+
+  <!-- Socket.IO Client -->
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  
+  <!-- JS -->
+  <script src="hrdash.js"></script>
+  
+  <script>
+    // Initialize WebSocket connection
+    const socket = io('http://localhost:5000');
+    
+    // Connection status indicators
+    socket.on('connect', () => {
+      console.log('🔌 HR Dashboard connected to server');
+      showHRNotification('Connected to server', 'success');
+      // Join HR room for targeted updates
+      socket.emit('join-room', 'HR');
+    });
+    
+    socket.on('disconnect', () => {
+      console.log('🔌 HR Dashboard disconnected from server');
+      showHRNotification('Disconnected from server', 'error');
+    });
+    
+    // Real-time event listeners for HR
+    socket.on('new-leave-request', async (data) => {
+      console.log('📋 New leave request:', data);
+      showHRNotification(`New leave request from ${data.employee}`, 'info');
+      
+      // Update chart immediately
+      if (typeof updateLeaveChartData === 'function') {
+        await updateLeaveChartData();
+      }
+      
+      loadPendingLeaveRequests();
+      loadLeaveRequests();
+      loadDashboardStats();
+    });
+    
+    socket.on('attendance-updated', (data) => {
+      console.log('📊 Real-time attendance update:', data);
+      showHRNotification(`${data.employee} marked ${data.status}`, 'info');
+      loadAttendanceData();
+      loadTodayAttendance();
+      loadDashboardStats();
+    });
+    
+    socket.on('profile-updated', (data) => {
+      console.log('👤 Real-time profile update:', data);
+      showHRNotification(`Profile updated for ${data.user}`, 'info');
+      loadEmployees();
+    });
+    
+    // Real-time chart updates
+    socket.on('leave-status-changed', async (data) => {
+      console.log('📊 Leave status changed:', data);
+      showHRNotification(`Leave request ${data.status.toLowerCase()} for ${data.employee}`, 'info');
+      
+      // Update chart immediately
+      if (typeof updateLeaveChartData === 'function') {
+        await updateLeaveChartData();
+      }
+      
+      loadPendingLeaveRequests();
+      loadLeaveRequests();
+      loadDashboardStats();
+    });
+    
+    // Real-time regularization updates
+    socket.on('new-regularization-request', async (data) => {
+      console.log('📋 New regularization request:', data);
+      showHRNotification(`New regularization request from ${data.employee}`, 'info');
+      
+      loadRegularizationRequests();
+      loadDashboardStats();
+    });
+    
+    socket.on('regularization-status-changed', async (data) => {
+      console.log('📊 Regularization status changed:', data);
+      showHRNotification(`Regularization request ${data.status.toLowerCase()} for ${data.employee}`, 'info');
+      
+      loadRegularizationRequests();
+      loadDashboardStats();
+    });
+    
+    // HR Notification system
+    function showHRNotification(message, type = 'info') {
+      const notification = document.createElement('div');
+      notification.className = `hr-notification hr-notification-${type}`;
+      notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${type === 'success' ? '#2ecc71' : type === 'error' ? '#e74c3c' : '#3498db'};
+        color: white;
+        padding: 15px 20px;
+        border-radius: 5px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        z-index: 10000;
+        animation: slideInHR 0.3s ease-out;
+        max-width: 300px;
+      `;
+      notification.textContent = message;
+      
+      document.body.appendChild(notification);
+      
+      setTimeout(() => {
+        notification.style.animation = 'slideOutHR 0.3s ease-in';
+        setTimeout(() => notification.remove(), 300);
+      }, 4000);
+    }
+    
+    // Add CSS for HR notifications and chart controls
+    const hrStyle = document.createElement('style');
+    hrStyle.textContent = `
+      @keyframes slideInHR {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+      }
+      @keyframes slideOutHR {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(100%); opacity: 0; }
+      }
+      .chart-controls {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 10px;
+        padding: 10px;
+        background: #f8f9fa;
+        border-radius: 5px;
+      }
+      .chart-timestamp {
+        font-size: 12px;
+        color: #666;
+        font-style: italic;
+      }
+      .btn-small {
+        padding: 5px 10px;
+        font-size: 12px;
+        background: #3498db;
+        color: white;
+        border: none;
+        border-radius: 3px;
+        cursor: pointer;
+        transition: background 0.3s;
+      }
+      .btn-small:hover {
+        background: #2980b9;
+      }
+    `;
+    document.head.appendChild(hrStyle);
+    
+    // ===== Load HR User Data =====
+    async function loadHRUserData() {
+      const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+      if (currentUser) {
+        try {
+          // Try to fetch updated user data from server
+          const response = await fetch(`http://localhost:5000/user/${currentUser.email}`);
+          if (response.ok) {
+            const userData = await response.json();
+            updateHRProfile(userData);
+          } else {
+            // Fallback to localStorage data
+            updateHRProfile(currentUser);
+          }
+        } catch (error) {
+          console.error("Error fetching HR user data:", error);
+          // Fallback to localStorage data
+          updateHRProfile(currentUser);
+        }
+      } else {
+        // No user logged in, redirect to login
+        window.location.href = "login.html";
+      }
+    }
+
+    function updateHRProfile(userData) {
+      document.querySelector(".profile-card h2").textContent = userData.name || userData.username || "HR Manager";
+      document.querySelector(".profile-card p").textContent = userData.department || "HR";
+      document.querySelector(".profile-email").textContent = userData.email || "";
+    }
+
+    // Load HR user data when page loads
+    window.addEventListener("DOMContentLoaded", loadHRUserData);
+  </script>
+
+  <!-- 🔑 Calendarific API Integration -->
+    <!-- 🔑 Calendarific API Integration -->
+    <script>
+    // ===== Holiday API (unchanged) =====
+    const list = document.getElementById("holidayList");
+    const year = new Date().getFullYear();
+    const apiKey = "7qr5zY6DhiHw8FwM8IV1ElXauJzHO07p";
+    const country = "IN";
+
+fetch(`https://calendarific.com/api/v2/holidays?api_key=${apiKey}&country=${country}&year=${year}`)
+  .then(res => { if (!res.ok) throw new Error("Network response was not ok"); return res.json(); })
+  .then(data => {
+    const holidays = data.response.holidays;
+    const today = new Date();
+    const upcoming = holidays.filter(h => new Date(h.date.iso) > today);
+    upcoming.sort((a,b) => new Date(a.date.iso) - new Date(b.date.iso));
+    list.innerHTML = "";
+    upcoming.slice(0,5).forEach(h => {
+      const item = document.createElement("li");
+      const holidayDate = new Date(h.date.iso);
+      const dateStr = holidayDate.toLocaleDateString("en-IN", { year: "numeric", month: "short", day: "numeric" });
+      item.textContent = `${h.name} – ${dateStr}`;
+      list.appendChild(item);
+    });
+    if (!upcoming.length) list.innerHTML = "<li>No upcoming holidays 🎉</li>";
+  })
+  .catch(err => {
+    console.error(err);
+    list.innerHTML = "<li>Error loading holidays ❌</li>";
+  });
+
+    // Load on page start
+    window.addEventListener("DOMContentLoaded", loadHolidays);
+
+    // Logout function
+    function logout() {
+      localStorage.removeItem("currentUser");
+      alert("Logged out successfully!");
+      window.location.href = "login.html";
+    }
+  </script>
+</body>
+</html>

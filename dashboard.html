@@ -1,0 +1,817 @@
+<!DOCTYPE html> 
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HRWIFI</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>HRWIFI</h1>
+    <div class="header-actions">
+      <button class="refresh-btn" onclick="loadDashboardData()" title="Refresh Dashboard">🔄 Refresh</button>
+      <button class="leave-btn" onclick="openLeaveForm()">Apply Leave</button>
+      <button class="regularization-btn" onclick="openRegularizationForm()">Regularization</button>
+      <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="dashboard">
+        <!-- ===== Attendance Section ===== -->
+    <div class="attendance-card stat-card">
+      <h3>Attendance</h3>
+      <p id="attendanceStatus">Not Marked</p>
+      <button onclick="markAttendance()">Punch In</button>
+    </div>
+      <!-- Profile Section -->
+      <div class="profile-card">
+        <div class="profile-img">
+          <img id="profilePic" src="https://randomuser.me/api/portraits/men/75.jpg" alt="Profile Picture">
+        </div>
+        <h2 id="profileName">Loading...</h2>
+        <p id="profileRole">Loading...</p>
+        <!-- ✨ NEW Edit button -->
+        <button class="edit-btn" onclick="openEditForm()">Edit Profile</button>
+      </div>
+
+      <!-- Stats Section -->
+      <div class="stats">
+        <div class="stat-card">
+          <h2 id="totalAttendance">0</h2>
+          <p>Total Attendance</p>
+        </div>
+        <div class="stat-card">
+          <h2 id="leavesTaken">0</h2>
+          <p>Leaves Taken</p>
+        </div>
+        <div class="stat-card">
+          <h2 id="halfDays">0</h2>
+          <p>Half-Days</p>
+        </div>
+      </div>
+
+      <!-- Personal Details -->
+      <div class="personal-details">
+        <h3>Personal Details</h3>
+        <div class="detail"><span>Name:</span> <span id="dName">Loading...</span></div>
+        <div class="detail"><span>Email:</span> <span id="dEmail">Loading...</span></div>
+        <div class="detail"><span>Phone:</span> <span id="dPhone">Loading...</span></div>
+        <div class="detail"><span>Date of Birth:</span> <span id="dDob">Loading...</span></div>
+        <div class="detail"><span>Gender:</span> <span id="dGender">Loading...</span></div>
+        <div class="detail"><span>Address:</span> <span id="dAddress">Loading...</span></div>
+      </div>
+
+      <!-- Upcoming Holidays -->
+      <div class="upcoming-holidays">
+        <h3>Upcoming Holidays</h3>
+        <ul id="holidayList">
+          <li>Loading holidays...</li>
+        </ul>
+      </div>
+
+      <!-- Leave History -->
+      <div class="leave-history">
+        <h3>Recent Leave Requests</h3>
+        <div class="table-container">
+          <table class="leave-table">
+            <thead>
+              <tr>
+                <th>From Date</th>
+                <th>To Date</th>
+                <th>Type</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="leaveHistoryTable">
+              <tr><td colspan="4">Loading leave history...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ===== Leave Application Popup ===== -->
+  <div id="leaveModal" class="leave-modal">
+    <div class="leave-content">
+      <span class="close-btn" onclick="closeLeaveForm()">&times;</span>
+      <h2>Leave Application</h2>
+      <form id="leaveForm">
+        <label>Leave Type:</label>
+        <select id="leaveType" required>
+          <option value="">Select Leave Type</option>
+          <option value="Sick">Sick Leave</option>
+          <option value="Personal">Personal Leave</option>
+          <option value="Vacation">Vacation</option>
+          <option value="Half-Day">Half Day</option>
+        </select>
+        <label>From Date:</label>
+        <input type="date" id="leaveFromDate" required>
+        <label>To Date:</label>
+        <input type="date" id="leaveToDate" required>
+        <label>Reason:</label>
+        <textarea rows="4" id="leaveReason" placeholder="Enter reason..." required></textarea>
+        <button type="submit" class="submit-leave">Submit</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ✨ NEW Edit Profile Modal -->
+  <div id="editModal" class="leave-modal">
+    <div class="leave-content">
+      <span class="close-btn" onclick="closeEditForm()">&times;</span>
+      <h2>Edit Profile</h2>
+      <form id="editForm">
+        <label>Profile Picture:</label>
+        <input type="file" id="newPic" accept="image/*">
+        <label>Name:</label>
+        <input type="text" id="newName" placeholder="Enter your name">
+        <label>Email:</label>
+        <input type="email" id="newEmail" placeholder="Enter your email">
+        <label>Phone:</label>
+        <input type="text" id="newPhone" placeholder="Enter your phone">
+        <label>Date of Birth:</label>
+        <input type="date" id="newDob">
+        <label>Gender:</label>
+        <select id="newGender">
+          <option value="">Select Gender</option>
+          <option value="Male">Male</option>
+          <option value="Female">Female</option>
+          <option value="Other">Other</option>
+        </select>
+        <label>Address:</label>
+        <input type="text" id="newAddress" placeholder="Enter your address">
+        <button type="submit" class="submit-leave">Save</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Regularization Request Modal -->
+  <div id="regularizationModal" class="leave-modal">
+    <div class="leave-content">
+      <span class="close-btn" onclick="closeRegularizationForm()">&times;</span>
+      <h2>Regularization Request</h2>
+      <form id="regularizationForm">
+        <label>Date:</label>
+        <input type="date" id="regularizationDate" required>
+        <label>Reason:</label>
+        <textarea rows="4" id="regularizationReason" placeholder="Enter reason for regularization..." required></textarea>
+        <button type="submit" class="submit-leave">Submit Request</button>
+      </form>
+    </div>
+  </div>
+ 
+
+  <!-- Socket.IO Client -->
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  
+  <script>
+    // Initialize WebSocket connection
+    const socket = io('http://localhost:5000');
+    
+    // Connection status indicators
+    socket.on('connect', () => {
+      console.log('🔌 Connected to server');
+      showNotification('Connected to server', 'success');
+    });
+    
+    socket.on('disconnect', () => {
+      console.log('🔌 Disconnected from server');
+      showNotification('Disconnected from server', 'error');
+    });
+    
+    // Real-time event listeners
+    socket.on('attendance-updated', (data) => {
+      console.log('📊 Real-time attendance update:', data);
+      if (data.employee === getCurrentUserEmail()) {
+        showNotification(`Attendance updated: ${data.status}`, 'info');
+        loadCurrentAttendanceStatus();
+        loadEmployeeStats();
+      }
+    });
+    
+    socket.on('leave-status-changed', (data) => {
+      console.log('📋 Real-time leave update:', data);
+      if (data.employee === getCurrentUserEmail()) {
+        showNotification(`Leave request ${data.status.toLowerCase()}!`, 'info');
+        loadLeaveHistory();
+        loadEmployeeStats();
+      }
+    });
+    
+    socket.on('profile-updated', (data) => {
+      console.log('👤 Real-time profile update:', data);
+      if (data.user === getCurrentUserEmail()) {
+        showNotification('Profile updated successfully!', 'success');
+        loadUserData();
+      }
+    });
+    
+    // Helper function to get current user email
+    function getCurrentUserEmail() {
+      const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+      return currentUser ? currentUser.email : null;
+    }
+    
+    // Notification system
+    function showNotification(message, type = 'info') {
+      const notification = document.createElement('div');
+      notification.className = `notification notification-${type}`;
+      notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${type === 'success' ? '#2ecc71' : type === 'error' ? '#e74c3c' : '#3498db'};
+        color: white;
+        padding: 15px 20px;
+        border-radius: 5px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        z-index: 10000;
+        animation: slideIn 0.3s ease-out;
+      `;
+      notification.textContent = message;
+      
+      document.body.appendChild(notification);
+      
+      setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease-in';
+        setTimeout(() => notification.remove(), 300);
+      }, 3000);
+    }
+    
+    // Add CSS for notifications
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+      }
+      @keyframes slideOut {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(100%); opacity: 0; }
+      }
+    `;
+    document.head.appendChild(style);
+    
+    // ===== Load User Data =====
+    async function loadUserData() {
+      const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+      if (currentUser) {
+        try {
+          // Try to fetch updated user data from server
+          const response = await fetch(`http://localhost:5000/user/${currentUser.email}`);
+          if (response.ok) {
+            const userData = await response.json();
+            updateUserProfile(userData);
+            // Update edit form with current data
+            updateEditForm(userData);
+          } else {
+            // Fallback to localStorage data
+            updateUserProfile(currentUser);
+            updateEditForm(currentUser);
+          }
+        } catch (error) {
+          console.error("Error fetching user data:", error);
+          // Fallback to localStorage data
+          updateUserProfile(currentUser);
+          updateEditForm(currentUser);
+        }
+      } else {
+        // No user logged in, redirect to login
+        window.location.href = "login.html";
+      }
+    }
+
+    // Update edit form with current user data
+    function updateEditForm(userData) {
+      document.getElementById("newName").value = userData.name || userData.username || "";
+      document.getElementById("newEmail").value = userData.email || "";
+      document.getElementById("newPhone").value = userData.phone || "";
+      document.getElementById("newDob").value = userData.dob ? new Date(userData.dob).toISOString().split('T')[0] : "";
+      document.getElementById("newGender").value = userData.gender || "";
+      document.getElementById("newAddress").value = userData.address || "";
+    }
+
+    function updateUserProfile(userData) {
+      document.getElementById("profileName").textContent = userData.name || userData.username || "User";
+      document.getElementById("profileRole").textContent = userData.department || userData.usertype || "Employee";
+      document.getElementById("dName").textContent = userData.name || userData.username || "User";
+      document.getElementById("dEmail").textContent = userData.email || "";
+      document.getElementById("dPhone").textContent = userData.phone || "Not provided";
+      document.getElementById("dDob").textContent = userData.dob ? new Date(userData.dob).toLocaleDateString("en-GB",{day:'2-digit',month:'short',year:'numeric'}) : "Not provided";
+      document.getElementById("dGender").textContent = userData.gender || "Not provided";
+      document.getElementById("dAddress").textContent = userData.address || "Not provided";
+      
+      if (userData.profilePic) {
+        document.getElementById("profilePic").src = userData.profilePic;
+      }
+    }
+
+    // ===== Holiday API (unchanged) =====
+    const list = document.getElementById("holidayList");
+    const year = new Date().getFullYear();
+    const apiKey = "gDngoDUnJ11oHEdUi5a9uYiMMkEVZrlB";
+    const country = "IN";
+
+    fetch(`https://calendarific.com/api/v2/holidays?api_key=${apiKey}&country=${country}&year=${year}`)
+      .then(res => { if (!res.ok) throw new Error("Network response was not ok"); return res.json(); })
+      .then(data => {
+        const holidays = data.response.holidays;
+        const today = new Date();
+        const upcoming = holidays.filter(h => new Date(h.date.iso) > today);
+        upcoming.sort((a,b) => new Date(a.date.iso) - new Date(b.date.iso));
+        list.innerHTML = "";
+        upcoming.slice(0,5).forEach(h => {
+          const item = document.createElement("li");
+          const holidayDate = new Date(h.date.iso);
+          const dateStr = holidayDate.toLocaleDateString("en-IN", { year: "numeric", month: "short", day: "numeric" });
+          item.textContent = `${h.name} – ${dateStr}`;
+          list.appendChild(item);
+        });
+        if (!upcoming.length) list.innerHTML = "<li>No upcoming holidays 🎉</li>";
+      })
+      .catch(err => {
+        console.error(err);
+        list.innerHTML = "<li>Error loading holidays ❌</li>";
+      });
+
+    // ===== Leave Form JS =====
+    const modal = document.getElementById("leaveModal");
+    function openLeaveForm(){ modal.style.display = "block"; }
+    function closeLeaveForm(){ modal.style.display = "none"; }
+    window.onclick = e => { if(e.target == modal) closeLeaveForm(); }
+
+    document.getElementById("leaveForm").addEventListener("submit", async e => {
+      e.preventDefault();
+      
+      const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+      if (!currentUser) {
+        alert("No user logged in!");
+        return;
+      }
+
+      const leaveData = {
+        employee: currentUser.email,
+        from: document.getElementById("leaveFromDate").value,
+        to: document.getElementById("leaveToDate").value,
+        reason: document.getElementById("leaveReason").value,
+        leaveType: document.getElementById("leaveType").value,
+        status: "Pending"
+      };
+
+      try {
+        const response = await fetch("http://localhost:5000/leaves", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(leaveData)
+        });
+
+        if (response.ok) {
+          alert("Leave application submitted successfully!");
+          
+          // Emit real-time update
+          socket.emit('leave-update', {
+            employee: currentUser.email,
+            leaveType: leaveData.leaveType,
+            from: leaveData.from,
+            to: leaveData.to
+          });
+          
+          closeLeaveForm();
+          // Reset form
+          document.getElementById("leaveForm").reset();
+          // Refresh dashboard data
+          await loadDashboardData();
+        } else {
+          alert("Failed to submit leave application. Please try again.");
+        }
+      } catch (error) {
+        console.error("Error submitting leave:", error);
+        alert("Error submitting leave application. Please try again.");
+      }
+    });
+
+    // ===== ✨ Edit Profile JS =====
+    const editModal = document.getElementById("editModal");
+    function openEditForm(){ editModal.style.display = "block"; }
+    function closeEditForm(){ editModal.style.display = "none"; }
+    window.addEventListener("click", e => { if(e.target == editModal) closeEditForm(); });
+
+    // ===== Regularization JS =====
+    const regularizationModal = document.getElementById("regularizationModal");
+    function openRegularizationForm(){ regularizationModal.style.display = "block"; }
+    function closeRegularizationForm(){ regularizationModal.style.display = "none"; }
+    window.addEventListener("click", e => { if(e.target == regularizationModal) closeRegularizationForm(); });
+
+    document.getElementById("editForm").addEventListener("submit", async e => {
+      e.preventDefault();
+      
+      const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+      if (!currentUser) {
+        alert("No user logged in!");
+        return;
+      }
+
+      console.log("👤 Starting profile update for:", currentUser.email);
+
+      const updatedData = {
+        name: document.getElementById("newName").value,
+        email: document.getElementById("newEmail").value,
+        phone: document.getElementById("newPhone").value,
+        dob: document.getElementById("newDob").value,
+        gender: document.getElementById("newGender").value,
+        address: document.getElementById("newAddress").value
+      };
+
+      console.log("📤 Profile data to update:", updatedData);
+
+      try {
+        // Update on server
+        const response = await fetch(`http://localhost:5000/user/${currentUser.email}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(updatedData)
+        });
+
+        console.log("📥 Profile update response status:", response.status);
+
+        if (response.ok) {
+          const responseData = await response.json();
+          console.log("✅ Profile update successful:", responseData);
+          
+          // Update localStorage with server response
+          const updatedUser = { ...currentUser, ...responseData.user };
+          localStorage.setItem("currentUser", JSON.stringify(updatedUser));
+          
+          // Emit real-time update
+          if (typeof socket !== 'undefined') {
+            socket.emit('profile-update', {
+              user: currentUser.email,
+              data: updatedData
+            });
+          }
+          
+          // Update UI
+          updateUserProfile(updatedUser);
+          showNotification("Profile updated successfully!", 'success');
+          closeEditForm();
+        } else {
+          const errorText = await response.text();
+          console.error("❌ Profile update failed:", errorText);
+          alert(`Failed to update profile: ${response.status} - ${errorText}`);
+        }
+      } catch (error) {
+        console.error("❌ Profile update error:", error);
+        alert(`Error updating profile: ${error.message}`);
+      }
+
+      // picture preview
+      const file = document.getElementById("newPic").files[0];
+      if(file){
+        const reader = new FileReader();
+        reader.onload = e2 => document.getElementById("profilePic").src = e2.target.result;
+        reader.readAsDataURL(file);
+      }
+      
+      closeEditForm();
+    });
+
+    // Regularization form submission
+    document.getElementById("regularizationForm").addEventListener("submit", async e => {
+      e.preventDefault();
+      
+      const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+      if (!currentUser) {
+        alert("No user logged in!");
+        return;
+      }
+
+      const regularizationData = {
+        employee: currentUser.email,
+        date: document.getElementById("regularizationDate").value,
+        reason: document.getElementById("regularizationReason").value,
+        status: "Pending"
+      };
+
+      try {
+        const response = await fetch("http://localhost:5000/regularization", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(regularizationData)
+        });
+
+        if (response.ok) {
+          alert("Regularization request submitted successfully!");
+          closeRegularizationForm();
+          // Reset form
+          document.getElementById("regularizationForm").reset();
+          // Refresh dashboard data
+          await loadDashboardData();
+        } else {
+          alert("Failed to submit regularization request. Please try again.");
+        }
+      } catch (error) {
+        console.error("Error submitting regularization:", error);
+        alert("Error submitting regularization request. Please try again.");
+      }
+    });
+    // Get current location for GPS tracking
+    function getCurrentLocation() {
+      return new Promise((resolve, reject) => {
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              resolve({
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude,
+                address: `Lat: ${position.coords.latitude.toFixed(6)}, Lng: ${position.coords.longitude.toFixed(6)}`
+              });
+            },
+            (error) => {
+              console.error("Geolocation error:", error);
+              resolve(null);
+            }
+          );
+        } else {
+          resolve(null);
+        }
+      });
+    }
+
+    // Check Wi-Fi connection status
+    function getWifiStatus() {
+      return navigator.onLine ? "connected" : "disconnected";
+    }
+
+    async function markAttendance() {
+      try {
+        const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+        if (!currentUser) {
+          alert("No user logged in!");
+          return;
+        }
+
+        console.log("🎯 Starting attendance marking for:", currentUser.email);
+
+        // Get current location
+        const location = await getCurrentLocation();
+        const wifiStatus = getWifiStatus();
+        
+        console.log("📍 Location:", location);
+        console.log("📶 WiFi Status:", wifiStatus);
+        
+        // Determine punch type based on available data
+        let punchType = "Manual";
+        if (location) {
+          punchType = "GPS";
+        }
+        if (wifiStatus === "connected") {
+          punchType = "WiFi";
+        }
+
+        console.log("🔨 Punch Type:", punchType);
+
+        const attendanceData = { 
+            employee: currentUser.email,
+            punchType: punchType,
+            location: location,
+            wifiStatus: wifiStatus
+        };
+
+        console.log("📤 Sending attendance data:", attendanceData);
+
+        const res = await fetch("http://localhost:5000/attendance/punch", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(attendanceData)
+        });
+        
+        console.log("📥 Response status:", res.status);
+        
+        if (!res.ok) {
+          const errorText = await res.text();
+          console.error("❌ Server error:", errorText);
+          alert(`Server error: ${res.status} - ${errorText}`);
+          return;
+        }
+        
+        const data = await res.json();
+        console.log("✅ Attendance data received:", data);
+        
+        if (data.isHalfDay) {
+          document.getElementById("attendanceStatus").textContent = "Half-Day (WiFi disconnected >2 times)";
+          document.getElementById("attendanceStatus").style.color = "orange";
+        } else {
+          document.getElementById("attendanceStatus").textContent = data.message || "Attendance marked successfully!";
+          document.getElementById("attendanceStatus").style.color = "green";
+        }
+        
+        // Update button text based on punch status
+        const button = document.querySelector('.attendance-card button');
+        if (data.attendance && data.attendance.punchIn && !data.attendance.punchOut) {
+          button.textContent = "Punch Out";
+        } else if (data.attendance && data.attendance.punchIn && data.attendance.punchOut) {
+          button.textContent = "Punch In";
+        }
+        
+        // Emit real-time update
+        if (typeof socket !== 'undefined') {
+          socket.emit('attendance-update', {
+            employee: currentUser.email,
+            status: data.attendance.status,
+            punchType: data.attendance.punchType
+          });
+        }
+        
+        // Show success notification
+        showNotification(`Attendance ${data.attendance.status} successfully!`, 'success');
+        
+        // Refresh dashboard data after successful attendance marking
+        await loadDashboardData();
+        
+      } catch (err) {
+        console.error("❌ Attendance error:", err);
+        alert(`Error marking attendance: ${err.message}`);
+      }
+    }
+
+  // Load real-time statistics
+  async function loadEmployeeStats() {
+    const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+    if (!currentUser) return;
+
+    try {
+      // Load attendance statistics
+      const attendanceRes = await fetch(`http://localhost:5000/attendance/employee/${currentUser.email}`);
+      const attendanceData = await attendanceRes.json();
+      
+      const totalAttendance = attendanceData.filter(att => att.status === "Present").length;
+      const halfDays = attendanceData.filter(att => att.status === "Half-Day").length;
+      
+      document.getElementById("totalAttendance").textContent = totalAttendance;
+      document.getElementById("halfDays").textContent = halfDays;
+
+      // Load leave statistics
+      const leavesRes = await fetch(`http://localhost:5000/leaves/employee/${currentUser.email}`);
+      const leavesData = await leavesRes.json();
+      
+      const leavesTaken = leavesData.filter(leave => leave.status === "Approved").length;
+      document.getElementById("leavesTaken").textContent = leavesTaken;
+
+    } catch (error) {
+      console.error("Error loading employee stats:", error);
+    }
+  }
+
+  // Load leave history
+  async function loadLeaveHistory() {
+    const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+    if (!currentUser) {
+      console.log("No current user found");
+      return;
+    }
+
+    try {
+      console.log("Loading leave history for:", currentUser.email);
+      
+      // Try the specific employee endpoint first
+      let response = await fetch(`http://localhost:5000/leaves/employee/${currentUser.email}`);
+      
+      if (!response.ok) {
+        // Fallback to all leaves and filter client-side
+        console.log("Employee endpoint failed, trying all leaves endpoint");
+        response = await fetch(`http://localhost:5000/leaves`);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const allLeaves = await response.json();
+        const leaves = allLeaves.filter(leave => leave.employee === currentUser.email);
+        displayLeaveHistory(leaves);
+        return;
+      }
+      
+      const leaves = await response.json();
+      console.log("Leave history data:", leaves);
+      displayLeaveHistory(leaves);
+
+    } catch (error) {
+      console.error("Error loading leave history:", error);
+      document.getElementById("leaveHistoryTable").innerHTML = "<tr><td colspan='4'>No leave requests found</td></tr>";
+    }
+  }
+
+  // Display leave history
+  function displayLeaveHistory(leaves) {
+    const tbody = document.getElementById("leaveHistoryTable");
+    tbody.innerHTML = "";
+
+    if (leaves.length === 0) {
+      tbody.innerHTML = "<tr><td colspan='4'>No leave requests found</td></tr>";
+    } else {
+      // Show only recent 5 leaves
+      leaves.slice(0, 5).forEach(leave => {
+        const statusClass = leave.status.toLowerCase();
+        const row = `<tr>
+          <td>${new Date(leave.from).toLocaleDateString()}</td>
+          <td>${new Date(leave.to).toLocaleDateString()}</td>
+          <td>${leave.leaveType || 'N/A'}</td>
+          <td><span class="status-badge status-${statusClass}">${leave.status}</span></td>
+        </tr>`;
+        tbody.innerHTML += row;
+      });
+    }
+  }
+
+  // Load current attendance status
+  async function loadCurrentAttendanceStatus() {
+    const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+    if (!currentUser) return;
+
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const response = await fetch(`http://localhost:5000/attendance/${today}`);
+      const attendanceData = await response.json();
+      
+      const todayAttendance = attendanceData.find(att => att.employee === currentUser.email);
+      
+      if (todayAttendance) {
+        if (todayAttendance.punchIn && !todayAttendance.punchOut) {
+          document.getElementById("attendanceStatus").textContent = "Punched In";
+          document.getElementById("attendanceStatus").style.color = "green";
+          document.querySelector('.attendance-card button').textContent = "Punch Out";
+        } else if (todayAttendance.punchIn && todayAttendance.punchOut) {
+          document.getElementById("attendanceStatus").textContent = "Punched Out";
+          document.getElementById("attendanceStatus").style.color = "blue";
+          document.querySelector('.attendance-card button').textContent = "Punch In";
+        } else {
+          document.getElementById("attendanceStatus").textContent = todayAttendance.status;
+          document.getElementById("attendanceStatus").style.color = todayAttendance.status === "Half-Day" ? "orange" : "green";
+        }
+      } else {
+        document.getElementById("attendanceStatus").textContent = "Not Marked";
+        document.getElementById("attendanceStatus").style.color = "red";
+        document.querySelector('.attendance-card button').textContent = "Punch In";
+      }
+    } catch (error) {
+      console.error("Error loading attendance status:", error);
+    }
+  }
+
+  // Load all dashboard data
+  async function loadDashboardData() {
+    await loadUserData();
+    await loadEmployeeStats();
+    await loadLeaveHistory();
+    await loadCurrentAttendanceStatus();
+  }
+
+  // Smart auto-refresh dashboard (only when needed)
+  let lastRefreshTime = 0;
+  const REFRESH_INTERVAL = 60000; // 1 minute
+  
+  function startAutoRefresh() {
+    setInterval(async () => {
+      const now = Date.now();
+      // Only refresh if it's been more than 1 minute since last refresh
+      // and if the page is visible (not in background tab)
+      if (now - lastRefreshTime > REFRESH_INTERVAL && !document.hidden) {
+        console.log('🔄 Auto-refreshing dashboard...');
+      await loadDashboardData();
+        lastRefreshTime = now;
+      }
+    }, 30000); // Check every 30 seconds
+  }
+  
+  // Refresh when page becomes visible again
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) {
+      console.log('👁️ Page visible, refreshing data...');
+      loadDashboardData();
+    }
+  });
+
+  // Load user data when page loads
+  window.addEventListener("DOMContentLoaded", () => {
+    loadDashboardData();
+    startAutoRefresh();
+  });
+
+  // Logout function
+  function logout() {
+    localStorage.removeItem("currentUser");
+    alert("Logged out successfully!");
+    window.location.href = "login.html";
+  }
+  </script>
+</body>
+</html>

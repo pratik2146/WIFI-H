@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register Page</title>
+  <link rel="stylesheet" href="register.css">
+</head>
+<body>
+  <div class="register-container">
+    <h2>Register</h2>
+    <!-- Removed PHP action -->
+    <form id="registerForm">
+      
+      <!-- NEW User Type Dropdown -->
+      <div class="input-group">
+        <label for="usertype">User Type:</label>
+        <select id="usertype" name="usertype" required>
+          <option value="">Select User Type</option>
+          <option value="Employee">Employee</option>
+          <option value="HR">HR</option>
+        </select>
+      </div>
+
+      <div class="input-group">
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username" required>
+      </div>
+
+      <div class="input-group">
+        <label for="email">Email:</label>
+        <input type="email" id="email" name="email" required>
+      </div>
+
+      <div class="input-group">
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" required>
+      </div>
+
+      <div class="input-group">
+        <label for="confirm-password">Confirm Password:</label>
+        <input type="password" id="confirm-password" name="confirm-password" required>
+      </div>
+
+      <button type="submit">Register</button>
+      <p>Already have an account? <a href="login.html">Login here</a></p>
+    </form>
+  </div>
+
+  <script>
+    const registerForm = document.getElementById("registerForm");
+
+    registerForm.addEventListener("submit", async function(e) {
+      e.preventDefault(); // stop page refresh
+
+      const usertype = document.getElementById("usertype").value;
+      const username = document.getElementById("username").value;
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+      const confirm = document.getElementById("confirm-password").value;
+
+      // Password match check
+      if (password !== confirm) {
+        alert("Passwords do not match!");
+        return;
+      }
+
+      try {
+        // Try to register with server first
+        const response = await fetch("http://localhost:5000/register", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ usertype, username, email, password })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          alert("Registration successful! You can now login.");
+          window.location.href = "login.html";
+        } else {
+          alert(data.message || "Registration failed. Please try again.");
+        }
+      } catch (error) {
+        console.error("Registration error:", error);
+        
+        // Fallback to localStorage if server is not available
+        const users = JSON.parse(localStorage.getItem("users")) || [];
+
+        // Check if email already exists
+        if (users.find(u => u.email === email)) {
+          alert("Email already registered! Please login.");
+          return;
+        }
+
+        // Save new user to localStorage as fallback
+        users.push({ usertype, username, email, password });
+        localStorage.setItem("users", JSON.stringify(users));
+
+        alert("Registration successful! You can now login.");
+        window.location.href = "login.html";
+      }
+    });
+  </script>
+</body>
+</html>

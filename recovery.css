@@ -1,0 +1,105 @@
+/* recovery.css - White + Navy Theme */
+
+/* Reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #ffffff; /* full white background */
+}
+
+/* Floating recovery container */
+.recovery-container {
+  background-color: #ffffff; /* white box */
+  padding: 40px 30px;
+  border-radius: 16px; /* rounded corners */
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15); /* floating shadow effect */
+  width: 360px;
+  text-align: center;
+  position: relative;
+  transform: translateY(0);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.recovery-container:hover {
+  transform: translateY(-5px); /* slight lift on hover */
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+}
+
+/* Heading */
+.recovery-container h2 {
+  color: #001f4d; /* navy blue text */
+  margin-bottom: 25px;
+}
+
+/* Input groups */
+.input-group {
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.input-group label {
+  display: block;
+  margin-bottom: 5px;
+  color: #001f4d; /* navy blue label */
+  font-weight: bold;
+}
+
+.input-group input {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #001f4d; /* navy border */
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  transition: border 0.3s ease, box-shadow 0.3s ease;
+}
+
+.input-group input:focus {
+  border: 2px solid #003366; /* darker navy on focus */
+  box-shadow: 0 0 6px rgba(0, 31, 77, 0.3);
+}
+
+/* Button styling */
+button {
+  width: 100%;
+  padding: 12px;
+  background-color: #001f4d; /* navy button */
+  color: #ffffff; /* white text */
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+button:hover {
+  background-color: #003366; /* darker navy on hover */
+  transform: translateY(-2px);
+}
+
+/* Links and info text */
+p {
+  margin-top: 15px;
+  font-size: 14px;
+  text-align: center;
+  color: #001f4d; /* navy text */
+}
+
+p a {
+  color: #001f4d; /* navy links */
+  text-decoration: none;
+  font-weight: bold;
+}
+
+p a:hover {
+  text-decoration: underline;
+}

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Password Recovery</title>
+  <link rel="stylesheet" href="recovery.css">
+</head>
+<body>
+  <div class="recovery-container">
+    <div class="form-section">
+      <h2>Password Recovery</h2>
+      <form id="recoveryForm">
+        <div class="input-group">
+          <label for="email">Enter your Email:</label>
+          <input type="email" id="email" name="email" required placeholder="Your registered email">
+        </div>
+        <button type="submit">Send Recovery Link</button>
+        <p>Remembered your password? <a href="login.html">Login here</a></p>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const recoveryForm = document.getElementById("recoveryForm");
+
+    recoveryForm.addEventListener("submit", async function(event) {
+      event.preventDefault(); // stop page refresh
+
+      const email = document.getElementById("email").value;
+
+      try {
+        // Try MongoDB backend first
+        const response = await fetch("http://localhost:5000/recovery/check-email", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ email })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          alert(data.message);
+        } else {
+          // Fallback to localStorage check
+          const users = JSON.parse(localStorage.getItem("users")) || [];
+          const user = users.find(u => u.email === email);
+
+          if (user) {
+            alert("Recovery link has been sent to: " + email);
+          } else {
+            alert("No account found with this email.");
+          }
+        }
+      } catch (error) {
+        console.error("Recovery error:", error);
+        // Fallback to localStorage check
+        const users = JSON.parse(localStorage.getItem("users")) || [];
+        const user = users.find(u => u.email === email);
+
+        if (user) {
+          alert("Recovery link has been sent to: " + email);
+        } else {
+          alert("No account found with this email.");
+        }
+      }
+    });
+  </script>
+</body>
+</html>

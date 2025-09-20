@@ -1,0 +1,101 @@
+/* General body styling */
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #ffffff; /* Full white background */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+/* Floating register container */
+.register-container {
+  background-color: #ffffff; /* Pure white box */
+  padding: 40px 30px;
+  border-radius: 16px; /* Rounded corners */
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15); /* Floating shadow effect */
+  width: 360px;
+  text-align: center;
+  position: relative;
+  transform: translateY(0);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.register-container:hover {
+  transform: translateY(-5px); /* Slight lift on hover */
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+}
+
+/* Heading */
+.register-container h2 {
+  color: #001f4d; /* Navy blue text */
+  margin-bottom: 25px;
+}
+
+/* Input groups */
+.input-group {
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.input-group label {
+  display: block;
+  margin-bottom: 5px;
+  color: #001f4d; /* Navy blue label */
+  font-weight: bold;
+}
+
+.input-group input,
+.input-group select {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #001f4d; /* Navy blue border */
+  border-radius: 8px;
+  font-size: 14px;
+  box-sizing: border-box;
+  outline: none;
+  transition: border 0.3s ease, box-shadow 0.3s ease;
+}
+
+.input-group input:focus,
+.input-group select:focus {
+  border: 2px solid #003366; /* Darker navy on focus */
+  box-shadow: 0 0 6px rgba(0, 31, 77, 0.3);
+}
+
+/* Button styling */
+button {
+  width: 100%;
+  padding: 12px;
+  background-color: #001f4d; /* Navy blue button */
+  color: #ffffff; /* White text */
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+button:hover {
+  background-color: #003366; /* Darker navy */
+  transform: translateY(-2px);
+}
+
+/* Links */
+.register-container p {
+  margin-top: 15px;
+  font-size: 14px;
+  text-align: center;
+}
+
+.register-container a {
+  color: #001f4d; /* Navy blue links */
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.register-container a:hover {
+  text-decoration: underline;
+}

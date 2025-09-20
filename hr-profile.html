@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HR Profile Management</title>
+  <link rel="stylesheet" href="stylehr.css">
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+</head>
+<body>
+  <!-- Header -->
+  <header>
+    <h1>HR Profile Management</h1>
+    <div class="header-actions">
+      <button class="btn-small" onclick="loadHRProfiles()" title="Refresh">🔄 Refresh</button>
+      <button class="btn-primary" onclick="openCreateProfileForm()">Create HR Profile</button>
+      <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="dashboard">
+    <!-- HR Profiles List -->
+    <div class="personal-details">
+      <h3>HR Profiles</h3>
+      <div class="table-container">
+        <table class="leave-table">
+          <thead>
+            <tr>
+              <th>HR ID</th>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Department</th>
+              <th>Level</th>
+              <th>Specialization</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="hrProfilesTable">
+            <tr><td colspan="7">Loading HR profiles...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- HR Profile Statistics -->
+    <div class="stats">
+      <div class="stat-card">
+        <div class="stat-icon">👥</div>
+        <h2 id="totalHRProfiles">0</h2>
+        <p>Total HR Profiles</p>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">🎓</div>
+        <h2 id="seniorHRCount">0</h2>
+        <p>Senior HR</p>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">📋</div>
+        <h2 id="totalCertifications">0</h2>
+        <p>Total Certifications</p>
+      </div>
+    </div>
+  </main>
+
+  <!-- Create HR Profile Modal -->
+  <div id="createProfileModal" class="leave-modal">
+    <div class="leave-content">
+      <span class="close-btn" onclick="closeCreateProfileForm()">&times;</span>
+      <h2>Create HR Profile</h2>
+      <form id="createProfileForm">
+        <label>Select HR User:</label>
+        <select id="hrUserSelect" required>
+          <option value="">Select HR User</option>
+        </select>
+        
+        <label>HR ID:</label>
+        <input type="text" id="hrId" placeholder="e.g., HR001" required>
+        
+        <label>Department:</label>
+        <input type="text" id="hrDepartment" placeholder="e.g., Human Resources" required>
+        
+        <label>HR Level:</label>
+        <select id="hrLevel" required>
+          <option value="Junior HR">Junior HR</option>
+          <option value="Senior HR">Senior HR</option>
+          <option value="HR Manager">HR Manager</option>
+          <option value="HR Director">HR Director</option>
+        </select>
+        
+        <label>Specialization (comma-separated):</label>
+        <input type="text" id="hrSpecialization" placeholder="e.g., Recruitment, Training, Benefits">
+        
+        <label>Certifications (comma-separated):</label>
+        <input type="text" id="hrCertifications" placeholder="e.g., PHR, SHRM-CP">
+        
+        <button type="submit" class="submit-leave">Create Profile</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Edit HR Profile Modal -->
+  <div id="editProfileModal" class="leave-modal">
+    <div class="leave-content">
+      <span class="close-btn" onclick="closeEditProfileForm()">&times;</span>
+      <h2>Edit HR Profile</h2>
+      <form id="editProfileForm">
+        <input type="hidden" id="editProfileId">
+        
+        <label>HR ID:</label>
+        <input type="text" id="editHrId" required>
+        
+        <label>Department:</label>
+        <input type="text" id="editHrDepartment" required>
+        
+        <label>HR Level:</label>
+        <select id="editHrLevel" required>
+          <option value="Junior HR">Junior HR</option>
+          <option value="Senior HR">Senior HR</option>
+          <option value="HR Manager">HR Manager</option>
+          <option value="HR Director">HR Director</option>
+        </select>
+        
+        <label>Specialization (comma-separated):</label>
+        <input type="text" id="editHrSpecialization">
+        
+        <label>Certifications (comma-separated):</label>
+        <input type="text" id="editHrCertifications">
+        
+        <div class="permissions-section">
+          <h4>Permissions</h4>
+          <label><input type="checkbox" id="canApproveLeaves" checked> Can Approve Leaves</label>
+          <label><input type="checkbox" id="canManageEmployees" checked> Can Manage Employees</label>
+          <label><input type="checkbox" id="canViewReports" checked> Can View Reports</label>
+          <label><input type="checkbox" id="canManageAttendance" checked> Can Manage Attendance</label>
+        </div>
+        
+        <button type="submit" class="submit-leave">Update Profile</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // Initialize WebSocket connection
+    const socket = io('http://localhost:5000');
+    
+    // Connection status indicators
+    socket.on('connect', () => {
+      console.log('🔌 HR Profile Management connected to server');
+      showNotification('Connected to server', 'success');
+    });
+    
+    socket.on('disconnect', () => {
+      console.log('🔌 HR Profile Management disconnected from server');
+      showNotification('Disconnected from server', 'error');
+    });
+    
+    // Notification system
+    function showNotification(message, type = 'info') {
+      const notification = document.createElement('div');
+      notification.className = `notification notification-${type}`;
+      notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${type === 'success' ? '#2ecc71' : type === 'error' ? '#e74c3c' : '#3498db'};
+        color: white;
+        padding: 15px 20px;
+        border-radius: 5px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        z-index: 10000;
+        animation: slideIn 0.3s ease-out;
+      `;
+      notification.textContent = message;
+      
+      document.body.appendChild(notification);
+      
+      setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease-in';
+        setTimeout(() => notification.remove(), 300);
+      }, 3000);
+    }
+    
+    // Add CSS for notifications
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+      }
+      @keyframes slideOut {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(100%); opacity: 0; }
+      }
+      .permissions-section {
+        margin: 20px 0;
+        padding: 15px;
+        background: #f8f9fa;
+        border-radius: 5px;
+      }
+      .permissions-section h4 {
+        margin-top: 0;
+        color: #333;
+      }
+      .permissions-section label {
+        display: block;
+        margin: 8px 0;
+        font-weight: normal;
+      }
+      .permissions-section input[type="checkbox"] {
+        margin-right: 8px;
+      }
+    `;
+    document.head.appendChild(style);
+    
+    // Load HR users for dropdown
+    async function loadHRUsers() {
+      try {
+        const response = await fetch('http://localhost:5000/users');
+        const users = await response.json();
+        
+        const hrUsers = users.filter(user => ['HR', 'hr'].includes(user.usertype));
+        const select = document.getElementById('hrUserSelect');
+        
+        select.innerHTML = '<option value="">Select HR User</option>';
+        hrUsers.forEach(user => {
+          const option = document.createElement('option');
+          option.value = user._id;
+          option.textContent = `${user.name || user.username} (${user.email})`;
+          select.appendChild(option);
+        });
+      } catch (error) {
+        console.error('Error loading HR users:', error);
+      }
+    }
+    
+    // Load HR profiles
+    async function loadHRProfiles() {
+      try {
+        const response = await fetch('http://localhost:5000/hr-profiles');
+        const profiles = await response.json();
+        
+        const tbody = document.getElementById('hrProfilesTable');
+        tbody.innerHTML = '';
+        
+        if (profiles.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="7">No HR profiles found</td></tr>';
+        } else {
+          profiles.forEach(profile => {
+            const user = profile.userId;
+            const specialization = profile.specialization ? profile.specialization.join(', ') : 'None';
+            
+            const row = `
+              <tr>
+                <td>${profile.hrId}</td>
+                <td>${user.name || user.username}</td>
+                <td>${user.email}</td>
+                <td>${profile.department}</td>
+                <td>${profile.level}</td>
+                <td>${specialization}</td>
+                <td>
+                  <button class="btn-small" onclick="editHRProfile('${profile._id}')" style="background: #3498db; margin-right: 5px;">Edit</button>
+                  <button class="btn-small" onclick="viewHRProfile('${profile._id}')" style="background: #2ecc71;">View</button>
+                </td>
+              </tr>
+            `;
+            tbody.innerHTML += row;
+          });
+        }
+        
+        // Update statistics
+        document.getElementById('totalHRProfiles').textContent = profiles.length;
+        document.getElementById('seniorHRCount').textContent = profiles.filter(p => p.level.includes('Senior') || p.level.includes('Manager') || p.level.includes('Director')).length;
+        document.getElementById('totalCertifications').textContent = profiles.reduce((total, p) => total + (p.certifications ? p.certifications.length : 0), 0);
+        
+      } catch (error) {
+        console.error('Error loading HR profiles:', error);
+        document.getElementById('hrProfilesTable').innerHTML = '<tr><td colspan="7">Error loading HR profiles</td></tr>';
+      }
+    }
+    
+    // Create HR profile
+    async function createHRProfile(profileData) {
+      try {
+        const response = await fetch('http://localhost:5000/hr-profile', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(profileData)
+        });
+        
+        if (response.ok) {
+          showNotification('HR profile created successfully!', 'success');
+          closeCreateProfileForm();
+          loadHRProfiles();
+        } else {
+          const error = await response.text();
+          showNotification(`Error creating HR profile: ${error}`, 'error');
+        }
+      } catch (error) {
+        console.error('Error creating HR profile:', error);
+        showNotification(`Error creating HR profile: ${error.message}`, 'error');
+      }
+    }
+    
+    // Edit HR profile
+    async function editHRProfile(profileId) {
+      try {
+        const response = await fetch(`http://localhost:5000/hr-profile/${profileId}`);
+        const profile = await response.json();
+        
+        if (response.ok) {
+          // Populate edit form
+          document.getElementById('editProfileId').value = profile._id;
+          document.getElementById('editHrId').value = profile.hrId;
+          document.getElementById('editHrDepartment').value = profile.department;
+          document.getElementById('editHrLevel').value = profile.level;
+          document.getElementById('editHrSpecialization').value = profile.specialization ? profile.specialization.join(', ') : '';
+          document.getElementById('editHrCertifications').value = profile.certifications ? profile.certifications.join(', ') : '';
+          
+          // Set permissions
+          document.getElementById('canApproveLeaves').checked = profile.permissions.canApproveLeaves;
+          document.getElementById('canManageEmployees').checked = profile.permissions.canManageEmployees;
+          document.getElementById('canViewReports').checked = profile.permissions.canViewReports;
+          document.getElementById('canManageAttendance').checked = profile.permissions.canManageAttendance;
+          
+          openEditProfileForm();
+        } else {
+          showNotification('Error loading HR profile', 'error');
+        }
+      } catch (error) {
+        console.error('Error loading HR profile:', error);
+        showNotification('Error loading HR profile', 'error');
+      }
+    }
+    
+    // View HR profile details
+    function viewHRProfile(profileId) {
+      // This could open a detailed view modal
+      showNotification('View profile functionality coming soon!', 'info');
+    }
+    
+    // Modal functions
+    function openCreateProfileForm() {
+      document.getElementById('createProfileModal').style.display = 'block';
+      loadHRUsers();
+    }
+    
+    function closeCreateProfileForm() {
+      document.getElementById('createProfileModal').style.display = 'none';
+      document.getElementById('createProfileForm').reset();
+    }
+    
+    function openEditProfileForm() {
+      document.getElementById('editProfileModal').style.display = 'block';
+    }
+    
+    function closeEditProfileForm() {
+      document.getElementById('editProfileModal').style.display = 'none';
+      document.getElementById('editProfileForm').reset();
+    }
+    
+    // Form submissions
+    document.getElementById('createProfileForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const profileData = {
+        userId: document.getElementById('hrUserSelect').value,
+        hrId: document.getElementById('hrId').value,
+        department: document.getElementById('hrDepartment').value,
+        level: document.getElementById('hrLevel').value,
+        specialization: document.getElementById('hrSpecialization').value.split(',').map(s => s.trim()).filter(s => s),
+        certifications: document.getElementById('hrCertifications').value.split(',').map(s => s.trim()).filter(s => s)
+      };
+      
+      await createHRProfile(profileData);
+    });
+    
+    document.getElementById('editProfileForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const profileId = document.getElementById('editProfileId').value;
+      const updateData = {
+        hrId: document.getElementById('editHrId').value,
+        department: document.getElementById('editHrDepartment').value,
+        level: document.getElementById('editHrLevel').value,
+        specialization: document.getElementById('editHrSpecialization').value.split(',').map(s => s.trim()).filter(s => s),
+        certifications: document.getElementById('editHrCertifications').value.split(',').map(s => s.trim()).filter(s => s),
+        permissions: {
+          canApproveLeaves: document.getElementById('canApproveLeaves').checked,
+          canManageEmployees: document.getElementById('canManageEmployees').checked,
+          canViewReports: document.getElementById('canViewReports').checked,
+          canManageAttendance: document.getElementById('canManageAttendance').checked
+        }
+      };
+      
+      try {
+        const response = await fetch(`http://localhost:5000/hr-profile/${profileId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(updateData)
+        });
+        
+        if (response.ok) {
+          showNotification('HR profile updated successfully!', 'success');
+          closeEditProfileForm();
+          loadHRProfiles();
+        } else {
+          const error = await response.text();
+          showNotification(`Error updating HR profile: ${error}`, 'error');
+        }
+      } catch (error) {
+        console.error('Error updating HR profile:', error);
+        showNotification(`Error updating HR profile: ${error.message}`, 'error');
+      }
+    });
+    
+    // Close modals when clicking outside
+    window.addEventListener('click', (e) => {
+      if (e.target.id === 'createProfileModal') closeCreateProfileForm();
+      if (e.target.id === 'editProfileModal') closeEditProfileForm();
+    });
+    
+    // Logout function
+    function logout() {
+      localStorage.removeItem("currentUser");
+      alert("Logged out successfully!");
+      window.location.href = "login.html";
+    }
+    
+    // Load data when page loads
+    window.addEventListener('DOMContentLoaded', () => {
+      loadHRProfiles();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login Page</title>
+  <link rel="stylesheet" href="login.css">
+</head>
+<body>
+  <div class="login-container">
+    <h2>Login</h2>
+    <!-- Removed action (handled by JS) -->
+    <form id="loginForm">
+      <div class="input-group">
+        <label for="usertype">User Type:</label>
+        <select id="usertype" name="usertype" required>
+          <option value="">Select User Type</option>
+          <option value="Employee">Employee</option>
+          <option value="HR">HR</option>
+        </select>
+      </div>
+
+      <div class="input-group">
+        <label for="email">Email:</label>
+        <input type="email" id="email" name="email" required>
+      </div>
+
+      <div class="input-group">
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" required>
+      </div>
+
+      <button type="submit">Login</button>
+      <p><a href="recovery.html">Forgot password?</a></p>
+      <p>Don't have an account? <a href="register.html">Register</a></p>
+    </form>
+  </div>
+
+  <!-- Socket.IO Client -->
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  
+  <script>
+    // Initialize WebSocket connection
+    const socket = io('http://localhost:5000');
+    
+    // Connection status indicators
+    socket.on('connect', () => {
+      console.log('🔌 Connected to server');
+      document.body.style.borderLeft = '5px solid #2ecc71'; // Green border when connected
+    });
+    
+    socket.on('disconnect', () => {
+      console.log('🔌 Disconnected from server');
+      document.body.style.borderLeft = '5px solid #e74c3c'; // Red border when disconnected
+    });
+    
+    const loginForm = document.getElementById("loginForm");
+
+    loginForm.addEventListener("submit", async function(event) {
+      event.preventDefault(); // stop form from refreshing page
+
+      const usertype = document.getElementById("usertype").value;
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+
+      try {
+        // Try MongoDB backend first
+        const response = await fetch("http://localhost:5000/login", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ email, password, usertype })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          // Store current user session
+          localStorage.setItem("currentUser", JSON.stringify(data.user));
+          alert(`${usertype} login successful!`);
+          if (usertype === "Employee") {
+            window.location.href = "dashboard.html";
+          } else if (usertype === "HR") {
+            window.location.href = "hrdash.html";
+          }
+        } else {
+          // Fallback to localStorage and static credentials
+          const users = JSON.parse(localStorage.getItem("users")) || [];
+          const user = users.find(u => u.email === email && u.password === password && u.usertype === usertype);
+          
+          if (user) {
+            localStorage.setItem("currentUser", JSON.stringify(user));
+            alert(`${usertype} login successful!`);
+            if (usertype === "Employee") {
+              window.location.href = "dashboard.html";
+            } else if (usertype === "HR") {
+              window.location.href = "hrdash.html";
+            }
+          } else if (email === "employee@example.com" && password === "12345" && usertype === "Employee") {
+            // Fallback static credentials
+            const staticUser = { usertype: "Employee", username: "Employee", email: email, password: password };
+            localStorage.setItem("currentUser", JSON.stringify(staticUser));
+        alert("Employee login successful!");
+            window.location.href = "dashboard.html";
+      } else if (email === "hr@example.com" && password === "admin123" && usertype === "HR") {
+            // Fallback static credentials
+            const staticUser = { usertype: "HR", username: "HR Manager", email: email, password: password };
+            localStorage.setItem("currentUser", JSON.stringify(staticUser));
+        alert("HR login successful!");
+            window.location.href = "hrdash.html";
+      } else {
+        alert("Invalid credentials. Please try again.");
+          }
+        }
+      } catch (error) {
+        console.error("Login error:", error);
+        alert("Server error. Please try again.");
+      }
+    });
+  </script>
+</body>
+</html>
