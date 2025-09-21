@@ -182,12 +182,6 @@ The application uses MongoDB with the following collections:
 <img width="1919" height="1005" alt="Screenshot 2025-09-21 165443" src="https://github.com/user-attachments/assets/3d7b4f04-2437-4e9a-a976-540d9164bc3f" />
 <img width="1300" height="861" alt="Screenshot 2025-09-21 165430" src="https://github.com/user-attachments/assets/82bd8c42-6452-4bac-8f80-f5b2bfc92499" />
 <img width="638" height="229" alt="Screenshot 2025-09-21 135339" src="https://github.com/user-attachments/assets/9bb579ed-5683-4c20-bb82-ee862b06d894" />
-<img width="1919" height="1056" alt="Screenshot 2025-09-21 125938" src="https://github.com/user-attachments/assets/83f1e9e9-0053-4db5-9a13-35d9a216facf" />
-<img width="497" height="189" alt="Screenshot 2025-09-21 125926" src="https://github.com/user-attachments/assets/7cfead6a-06e7-4f6d-a110-100b1be70bb5" />
-<img width="699" height="222" alt="Screenshot 2025-09-21 125818" src="https://github.com/user-attachments/assets/0146abe0-4ae7-42dc-a6ce-0a4ac997d76b" />
-<img width="596" height="235" alt="Screenshot 2025-09-21 123024" src="https://github.com/user-attachments/assets/210177d5-6114-4a75-ae65-b48f9b6e4a31" />
-<img width="578" height="196" alt="Screenshot 2025-09-21 113510" src="https://github.com/user-attachments/assets/a5c2fbe4-9569-43f9-9c89-4dbe2239d70f" />
-<img width="546" height="375" alt="Screenshot 2025-09-21 105717" src="https://github.com/user-attachments/assets/136ec398-1cd3-49c8-a656-3df85893bd82" />
 <img width="1908" height="1017" alt="Screenshot 2025-09-20 182505" src="https://github.com/user-attachments/assets/4bbbe0f1-f9c6-49b5-bc42-f237a1a9ddce" />
 <img width="1913" height="864" alt="Screenshot 2025-09-20 181842" src="https://github.com/user-attachments/assets/9c82bb55-2a58-431e-8fb6-a99ca9dee9cc" />
 <img width="1917" height="810" alt="Screenshot 2025-09-20 181805" src="https://github.com/user-attachments/assets/235cd54e-4b1d-4263-9e66-12e9ca14c4e2" />
