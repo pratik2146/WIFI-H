@@ -159,7 +159,6 @@ The application uses MongoDB with the following collections:
 - All user sessions are managed through localStorage
 - The application supports both server-side (MongoDB) and client-side (localStorage) data storage
 - **All remaining files now have complete MongoDB backend integration**
-- <img width="1919" height="956" alt="Screenshot 2025-09-20 181724" src="https://github.com/user-attachments/assets/0517acd7-6ce3-459b-afc0-53d8068c1f46" />
 - <img width="1919" height="971" alt="Screenshot 2025-09-21 181107" src="https://github.com/user-attachments/assets/7e72a524-c124-4278-9b66-dd8fba7f622a" />
 <img width="1906" height="874" alt="Screenshot 2025-09-21 181040" src="https://github.com/user-attachments/assets/4dea65e7-517b-4cd1-b68f-ea70dcde6ac9" />
 <img width="1912" height="865" alt="Screenshot 2025-09-21 181026" src="https://github.com/user-attachments/assets/56fe035a-609e-46c0-9fb4-5a23a8840ab2" />
