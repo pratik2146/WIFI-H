@@ -262,6 +262,40 @@ app.put("/user/:email", async (req, res) => {
     res.status(500).json({ message: "Error updating user", error: error.message });
   }
 });
+// Edit Profile Route (real-time updates)
+app.put("/edit-profile/:email", async (req, res) => {
+  try {
+    console.log(`✏️ Editing profile for: ${req.params.email}`);
+
+    const updates = {
+      name: req.body.name,
+      phone: req.body.phone,
+      dob: req.body.dob ? new Date(req.body.dob) : null,
+      address: req.body.address,
+      profilePic: req.body.profilePic || ''
+    };
+
+    updates.updatedAt = new Date();
+
+    const user = await User.findOneAndUpdate(
+      { email: req.params.email },
+      updates,
+      { new: true, runValidators: true }
+    );
+
+    if (user) {
+      console.log(`✅ Profile updated for ${user.email}`);
+      broadcastUpdate("profile-updated", { user: user.email, data: user });
+      res.json({ message: "Profile updated successfully", user });
+    } else {
+      res.status(404).json({ message: "User not found" });
+    }
+  } catch (error) {
+    console.error("❌ Profile update error:", error);
+    res.status(500).json({ message: "Error updating profile", error: error.message });
+  }
+});
+
 
 // Password Recovery Routes
 app.post("/recovery/check-email", async (req, res) => {
