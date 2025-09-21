@@ -9,14 +9,15 @@
 </head>
 <body>
   <!-- Header -->
-  <header>
-    <h1>HR Dashboard</h1>
-    <div class="header-actions">
-      <button id="refreshBtn" class="btn-small" onclick="loadHRDashboardData()" title="Refresh">🔄 Refresh</button>
-      <button class="btn-primary" onclick="window.location.href='hr-profile.html'" title="Manage HR Profiles">👥 HR Profiles</button>
-      <button class="logout-btn" id="navLogout" onclick="logout()">Logout</button>
-    </div>
-  </header>
+<header>
+  <h1>HR Dashboard</h1>
+  <div class="header-actions">
+    <button id="refreshBtn" class="btn-small" onclick="loadHRDashboardData()" title="Refresh">🔄 Refresh</button>
+    <button class="btn-primary" onclick="window.location.href='edit-profile-hr.html'" title="Edit Your Profile">✏️ Edit Profile</button>
+    <button class="logout-btn" id="navLogout" onclick="logout()">Logout</button>
+  </div>
+</header>
+
 
   <!-- Layout -->
   <main class="dashboard">
@@ -359,11 +360,50 @@
       }
     }
 
-    function updateHRProfile(userData) {
-      document.querySelector(".profile-card h2").textContent = userData.name || userData.username || "HR Manager";
-      document.querySelector(".profile-card p").textContent = userData.department || "HR";
-      document.querySelector(".profile-email").textContent = userData.email || "";
+   function updateHRProfile(userData) {
+  // Load HR-specific profile data
+  const hrProfile = JSON.parse(localStorage.getItem("hrProfile")) || {};
+  
+  // Use HR profile data if available, otherwise fall back to user data
+  const displayData = {
+    name: hrProfile.name || userData.name || userData.username || "HR Manager",
+    department: hrProfile.department || userData.department || "HR",
+    email: hrProfile.email || userData.email || "",
+    profilePic: hrProfile.profilePic || userData.profilePic || "https://randomuser.me/api/portraits/men/75.jpg"
+  };
+  
+  const profileCard = document.querySelector(".profile-card");
+  if (profileCard) {
+    profileCard.querySelector("h2").textContent = displayData.name;
+    profileCard.querySelector("p").textContent = displayData.department;
+    profileCard.querySelector(".profile-email").textContent = displayData.email;
+    profileCard.querySelector(".profile-img img").src = displayData.profilePic;
+  }
+}
+async function loadDashboardStats() {
+  try {
+    // Fetch total employees from backend
+    const res = await fetch("http://localhost:5000/employees/count");
+    const data = await res.json();
+
+    // Update only if value exists
+    if (data.total !== undefined) {
+      document.getElementById("totalEmployees").textContent = data.total;
     }
+  } catch (error) {
+    console.error("Error loading dashboard stats:", error);
+  }
+}
+
+// Run only once after page load
+window.addEventListener("DOMContentLoaded", () => {
+  loadDashboardStats();
+});
+
+
+// Run when page loads
+window.addEventListener("DOMContentLoaded", loadDashboardStats);
+
 
     // Load HR user data when page loads
     window.addEventListener("DOMContentLoaded", loadHRUserData);

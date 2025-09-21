@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Edit Profile - Redirecting</title>
+  <link rel="stylesheet" href="stylehr.css">
+  <style>
+    .redirect-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      text-align: center;
+    }
+    
+    .redirect-card {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 40px;
+      border-radius: 20px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+    }
+    
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 4px solid rgba(255, 255, 255, 0.3);
+      border-top: 4px solid white;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 20px auto;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="redirect-container">
+    <div class="redirect-card">
+      <h1>🔄 Redirecting to Edit Profile</h1>
+      <div class="spinner"></div>
+      <p>Please wait while we redirect you to the appropriate edit profile page...</p>
+    </div>
+  </div>
+<script>
+const currentUser = JSON.parse(localStorage.getItem("currentUser")) || {};
+
+// Redirect to appropriate edit profile page based on user type
+function redirectToAppropriateProfile() {
+  if (currentUser.usertype === 'HR' || currentUser.usertype === 'hr') {
+    window.location.href = 'edit-profile-hr.html';
+  } else {
+    window.location.href = 'edit-profile-employee.html';
+  }
+}
+
+// Redirect immediately when page loads
+window.addEventListener('DOMContentLoaded', () => {
+  setTimeout(redirectToAppropriateProfile, 1500); // 1.5 second delay for better UX
+});
+</script>
+
+
+</body>
+</html>

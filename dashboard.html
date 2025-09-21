@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>  
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -33,7 +33,7 @@
         <h2 id="profileName">Loading...</h2>
         <p id="profileRole">Loading...</p>
         <!-- ✨ NEW Edit button -->
-        <button class="edit-btn" onclick="openEditForm()">Edit Profile</button>
+        <button class="edit-btn" onclick="window.location.href='edit-profile-employee.html'">Edit Profile</button>
       </div>
 
       <!-- Stats Section -->
@@ -118,35 +118,6 @@
     </div>
   </div>
 
-  <!-- ✨ NEW Edit Profile Modal -->
-  <div id="editModal" class="leave-modal">
-    <div class="leave-content">
-      <span class="close-btn" onclick="closeEditForm()">&times;</span>
-      <h2>Edit Profile</h2>
-      <form id="editForm">
-        <label>Profile Picture:</label>
-        <input type="file" id="newPic" accept="image/*">
-        <label>Name:</label>
-        <input type="text" id="newName" placeholder="Enter your name">
-        <label>Email:</label>
-        <input type="email" id="newEmail" placeholder="Enter your email">
-        <label>Phone:</label>
-        <input type="text" id="newPhone" placeholder="Enter your phone">
-        <label>Date of Birth:</label>
-        <input type="date" id="newDob">
-        <label>Gender:</label>
-        <select id="newGender">
-          <option value="">Select Gender</option>
-          <option value="Male">Male</option>
-          <option value="Female">Female</option>
-          <option value="Other">Other</option>
-        </select>
-        <label>Address:</label>
-        <input type="text" id="newAddress" placeholder="Enter your address">
-        <button type="submit" class="submit-leave">Save</button>
-      </form>
-    </div>
-  </div>
 
   <!-- Regularization Request Modal -->
   <div id="regularizationModal" class="leave-modal">
@@ -170,7 +141,7 @@
   <script>
     // Initialize WebSocket connection
     const socket = io('http://localhost:5000');
-    
+
     // Connection status indicators
     socket.on('connect', () => {
       console.log('🔌 Connected to server');
@@ -181,8 +152,8 @@
       console.log('🔌 Disconnected from server');
       showNotification('Disconnected from server', 'error');
     });
-    
-    // Real-time event listeners
+
+    // Real-time event listeners (no DOM changes that will cause errors)
     socket.on('attendance-updated', (data) => {
       console.log('📊 Real-time attendance update:', data);
       if (data.employee === getCurrentUserEmail()) {
@@ -265,18 +236,24 @@
           if (response.ok) {
             const userData = await response.json();
             updateUserProfile(userData);
-            // Update edit form with current data
-            updateEditForm(userData);
+            // Only update edit form if the edit inputs exist on this page
+            if (document.getElementById("newName") || document.getElementById("newEmail") || document.getElementById("newPhone")) {
+              updateEditForm(userData);
+            }
           } else {
             // Fallback to localStorage data
             updateUserProfile(currentUser);
-            updateEditForm(currentUser);
+            if (document.getElementById("newName") || document.getElementById("newEmail") || document.getElementById("newPhone")) {
+              updateEditForm(currentUser);
+            }
           }
         } catch (error) {
           console.error("Error fetching user data:", error);
           // Fallback to localStorage data
           updateUserProfile(currentUser);
-          updateEditForm(currentUser);
+          if (document.getElementById("newName") || document.getElementById("newEmail") || document.getElementById("newPhone")) {
+            updateEditForm(currentUser);
+          }
         }
       } else {
         // No user logged in, redirect to login
@@ -284,28 +261,53 @@
       }
     }
 
-    // Update edit form with current user data
+    // Update edit form with current user data (safe: checks element exists)
     function updateEditForm(userData) {
-      document.getElementById("newName").value = userData.name || userData.username || "";
-      document.getElementById("newEmail").value = userData.email || "";
-      document.getElementById("newPhone").value = userData.phone || "";
-      document.getElementById("newDob").value = userData.dob ? new Date(userData.dob).toISOString().split('T')[0] : "";
-      document.getElementById("newGender").value = userData.gender || "";
-      document.getElementById("newAddress").value = userData.address || "";
+      const safeSet = (id, value) => {
+        const el = document.getElementById(id);
+        if (el) el.value = value;
+      };
+      safeSet("newName", userData.name || userData.username || "");
+      safeSet("newEmail", userData.email || "");
+      safeSet("newPhone", userData.phone || "");
+      safeSet("newDob", userData.dob ? new Date(userData.dob).toISOString().split('T')[0] : "");
+      safeSet("newGender", userData.gender || "");
+      safeSet("newAddress", userData.address || "");
     }
 
     function updateUserProfile(userData) {
-      document.getElementById("profileName").textContent = userData.name || userData.username || "User";
-      document.getElementById("profileRole").textContent = userData.department || userData.usertype || "Employee";
-      document.getElementById("dName").textContent = userData.name || userData.username || "User";
-      document.getElementById("dEmail").textContent = userData.email || "";
-      document.getElementById("dPhone").textContent = userData.phone || "Not provided";
-      document.getElementById("dDob").textContent = userData.dob ? new Date(userData.dob).toLocaleDateString("en-GB",{day:'2-digit',month:'short',year:'numeric'}) : "Not provided";
-      document.getElementById("dGender").textContent = userData.gender || "Not provided";
-      document.getElementById("dAddress").textContent = userData.address || "Not provided";
+      // Load employee-specific profile data
+      const employeeProfile = JSON.parse(localStorage.getItem("employeeProfile")) || {};
       
-      if (userData.profilePic) {
-        document.getElementById("profilePic").src = userData.profilePic;
+      // Use employee profile data if available, otherwise fall back to user data
+      const displayData = {
+        name: employeeProfile.name || userData.name || userData.username || "User",
+        department: employeeProfile.department || userData.department || userData.usertype || "Employee",
+        email: employeeProfile.email || userData.email || "",
+        phone: employeeProfile.phone || userData.phone || "Not provided",
+        dob: employeeProfile.dob || userData.dob,
+        gender: employeeProfile.gender || userData.gender || "Not provided",
+        address: employeeProfile.address || userData.address || "Not provided",
+        profilePic: employeeProfile.profilePic || userData.profilePic
+      };
+      
+      const setTextIfExists = (id, text) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = text;
+      };
+
+      setTextIfExists("profileName", displayData.name);
+      setTextIfExists("profileRole", displayData.department);
+      setTextIfExists("dName", displayData.name);
+      setTextIfExists("dEmail", displayData.email);
+      setTextIfExists("dPhone", displayData.phone);
+      setTextIfExists("dDob", displayData.dob ? new Date(displayData.dob).toLocaleDateString("en-GB",{day:'2-digit',month:'short',year:'numeric'}) : "Not provided");
+      setTextIfExists("dGender", displayData.gender);
+      setTextIfExists("dAddress", displayData.address);
+      
+      if (displayData.profilePic) {
+        const picEl = document.getElementById("profilePic");
+        if (picEl) picEl.src = displayData.profilePic;
       }
     }
 
@@ -315,214 +317,144 @@
     const apiKey = "gDngoDUnJ11oHEdUi5a9uYiMMkEVZrlB";
     const country = "IN";
 
-    fetch(`https://calendarific.com/api/v2/holidays?api_key=${apiKey}&country=${country}&year=${year}`)
-      .then(res => { if (!res.ok) throw new Error("Network response was not ok"); return res.json(); })
-      .then(data => {
-        const holidays = data.response.holidays;
-        const today = new Date();
-        const upcoming = holidays.filter(h => new Date(h.date.iso) > today);
-        upcoming.sort((a,b) => new Date(a.date.iso) - new Date(b.date.iso));
-        list.innerHTML = "";
-        upcoming.slice(0,5).forEach(h => {
-          const item = document.createElement("li");
-          const holidayDate = new Date(h.date.iso);
-          const dateStr = holidayDate.toLocaleDateString("en-IN", { year: "numeric", month: "short", day: "numeric" });
-          item.textContent = `${h.name} – ${dateStr}`;
-          list.appendChild(item);
+    if (list) {
+      fetch(`https://calendarific.com/api/v2/holidays?api_key=${apiKey}&country=${country}&year=${year}`)
+        .then(res => { if (!res.ok) throw new Error("Network response was not ok"); return res.json(); })
+        .then(data => {
+          const holidays = data.response.holidays;
+          const today = new Date();
+          const upcoming = holidays.filter(h => new Date(h.date.iso) > today);
+          upcoming.sort((a,b) => new Date(a.date.iso) - new Date(b.date.iso));
+          list.innerHTML = "";
+          upcoming.slice(0,5).forEach(h => {
+            const item = document.createElement("li");
+            const holidayDate = new Date(h.date.iso);
+            const dateStr = holidayDate.toLocaleDateString("en-IN", { year: "numeric", month: "short", day: "numeric" });
+            item.textContent = `${h.name} – ${dateStr}`;
+            list.appendChild(item);
+          });
+          if (!upcoming.length) list.innerHTML = "<li>No upcoming holidays 🎉</li>";
+        })
+        .catch(err => {
+          console.error(err);
+          list.innerHTML = "<li>Error loading holidays ❌</li>";
         });
-        if (!upcoming.length) list.innerHTML = "<li>No upcoming holidays 🎉</li>";
-      })
-      .catch(err => {
-        console.error(err);
-        list.innerHTML = "<li>Error loading holidays ❌</li>";
-      });
+    }
 
     // ===== Leave Form JS =====
     const modal = document.getElementById("leaveModal");
-    function openLeaveForm(){ modal.style.display = "block"; }
-    function closeLeaveForm(){ modal.style.display = "none"; }
+    function openLeaveForm(){ if (modal) modal.style.display = "block"; }
+    function closeLeaveForm(){ if (modal) modal.style.display = "none"; }
     window.onclick = e => { if(e.target == modal) closeLeaveForm(); }
 
-    document.getElementById("leaveForm").addEventListener("submit", async e => {
-      e.preventDefault();
-      
-      const currentUser = JSON.parse(localStorage.getItem("currentUser"));
-      if (!currentUser) {
-        alert("No user logged in!");
-        return;
-      }
-
-      const leaveData = {
-        employee: currentUser.email,
-        from: document.getElementById("leaveFromDate").value,
-        to: document.getElementById("leaveToDate").value,
-        reason: document.getElementById("leaveReason").value,
-        leaveType: document.getElementById("leaveType").value,
-        status: "Pending"
-      };
-
-      try {
-        const response = await fetch("http://localhost:5000/leaves", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(leaveData)
-        });
-
-        if (response.ok) {
-          alert("Leave application submitted successfully!");
-          
-          // Emit real-time update
-          socket.emit('leave-update', {
-            employee: currentUser.email,
-            leaveType: leaveData.leaveType,
-            from: leaveData.from,
-            to: leaveData.to
-          });
-          
-          closeLeaveForm();
-          // Reset form
-          document.getElementById("leaveForm").reset();
-          // Refresh dashboard data
-          await loadDashboardData();
-        } else {
-          alert("Failed to submit leave application. Please try again.");
+    const leaveFormEl = document.getElementById("leaveForm");
+    if (leaveFormEl) {
+      leaveFormEl.addEventListener("submit", async e => {
+        e.preventDefault();
+        
+        const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+        if (!currentUser) {
+          alert("No user logged in!");
+          return;
         }
-      } catch (error) {
-        console.error("Error submitting leave:", error);
-        alert("Error submitting leave application. Please try again.");
-      }
-    });
 
-    // ===== ✨ Edit Profile JS =====
-    const editModal = document.getElementById("editModal");
-    function openEditForm(){ editModal.style.display = "block"; }
-    function closeEditForm(){ editModal.style.display = "none"; }
-    window.addEventListener("click", e => { if(e.target == editModal) closeEditForm(); });
+        const leaveData = {
+          employee: currentUser.email,
+          from: document.getElementById("leaveFromDate").value,
+          to: document.getElementById("leaveToDate").value,
+          reason: document.getElementById("leaveReason").value,
+          leaveType: document.getElementById("leaveType").value,
+          status: "Pending"
+        };
+
+        try {
+          const response = await fetch("http://localhost:5000/leaves", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify(leaveData)
+          });
+
+          if (response.ok) {
+            alert("Leave application submitted successfully!");
+            
+            // Emit real-time update
+            if (typeof socket !== 'undefined') {
+              socket.emit('leave-update', {
+                employee: currentUser.email,
+                leaveType: leaveData.leaveType,
+                from: leaveData.from,
+                to: leaveData.to
+              });
+            }
+            
+            closeLeaveForm();
+            // Reset form
+            leaveFormEl.reset();
+            // Refresh dashboard data
+            await loadDashboardData();
+          } else {
+            alert("Failed to submit leave application. Please try again.");
+          }
+        } catch (error) {
+          console.error("Error submitting leave:", error);
+          alert("Error submitting leave application. Please try again.");
+        }
+      });
+    }
+
 
     // ===== Regularization JS =====
     const regularizationModal = document.getElementById("regularizationModal");
-    function openRegularizationForm(){ regularizationModal.style.display = "block"; }
-    function closeRegularizationForm(){ regularizationModal.style.display = "none"; }
+    function openRegularizationForm(){ if (regularizationModal) regularizationModal.style.display = "block"; }
+    function closeRegularizationForm(){ if (regularizationModal) regularizationModal.style.display = "none"; }
     window.addEventListener("click", e => { if(e.target == regularizationModal) closeRegularizationForm(); });
 
-    document.getElementById("editForm").addEventListener("submit", async e => {
-      e.preventDefault();
-      
-      const currentUser = JSON.parse(localStorage.getItem("currentUser"));
-      if (!currentUser) {
-        alert("No user logged in!");
-        return;
-      }
+    const regularFormEl = document.getElementById("regularizationForm");
+    if (regularFormEl) {
+      regularFormEl.addEventListener("submit", async e => {
+        e.preventDefault();
+        
+        const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+        if (!currentUser) {
+          alert("No user logged in!");
+          return;
+        }
 
-      console.log("👤 Starting profile update for:", currentUser.email);
+        const regularizationData = {
+          employee: currentUser.email,
+          date: document.getElementById("regularizationDate").value,
+          reason: document.getElementById("regularizationReason").value,
+          status: "Pending"
+        };
 
-      const updatedData = {
-        name: document.getElementById("newName").value,
-        email: document.getElementById("newEmail").value,
-        phone: document.getElementById("newPhone").value,
-        dob: document.getElementById("newDob").value,
-        gender: document.getElementById("newGender").value,
-        address: document.getElementById("newAddress").value
-      };
+        try {
+          const response = await fetch("http://localhost:5000/regularization", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify(regularizationData)
+          });
 
-      console.log("📤 Profile data to update:", updatedData);
-
-      try {
-        // Update on server
-        const response = await fetch(`http://localhost:5000/user/${currentUser.email}`, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(updatedData)
-        });
-
-        console.log("📥 Profile update response status:", response.status);
-
-        if (response.ok) {
-          const responseData = await response.json();
-          console.log("✅ Profile update successful:", responseData);
-          
-          // Update localStorage with server response
-          const updatedUser = { ...currentUser, ...responseData.user };
-          localStorage.setItem("currentUser", JSON.stringify(updatedUser));
-          
-          // Emit real-time update
-          if (typeof socket !== 'undefined') {
-            socket.emit('profile-update', {
-              user: currentUser.email,
-              data: updatedData
-            });
+          if (response.ok) {
+            alert("Regularization request submitted successfully!");
+            closeRegularizationForm();
+            // Reset form
+            regularFormEl.reset();
+            // Refresh dashboard data
+            await loadDashboardData();
+          } else {
+            alert("Failed to submit regularization request. Please try again.");
           }
-          
-          // Update UI
-          updateUserProfile(updatedUser);
-          showNotification("Profile updated successfully!", 'success');
-          closeEditForm();
-        } else {
-          const errorText = await response.text();
-          console.error("❌ Profile update failed:", errorText);
-          alert(`Failed to update profile: ${response.status} - ${errorText}`);
+        } catch (error) {
+          console.error("Error submitting regularization:", error);
+          alert("Error submitting regularization request. Please try again.");
         }
-      } catch (error) {
-        console.error("❌ Profile update error:", error);
-        alert(`Error updating profile: ${error.message}`);
-      }
+      });
+    }
 
-      // picture preview
-      const file = document.getElementById("newPic").files[0];
-      if(file){
-        const reader = new FileReader();
-        reader.onload = e2 => document.getElementById("profilePic").src = e2.target.result;
-        reader.readAsDataURL(file);
-      }
-      
-      closeEditForm();
-    });
-
-    // Regularization form submission
-    document.getElementById("regularizationForm").addEventListener("submit", async e => {
-      e.preventDefault();
-      
-      const currentUser = JSON.parse(localStorage.getItem("currentUser"));
-      if (!currentUser) {
-        alert("No user logged in!");
-        return;
-      }
-
-      const regularizationData = {
-        employee: currentUser.email,
-        date: document.getElementById("regularizationDate").value,
-        reason: document.getElementById("regularizationReason").value,
-        status: "Pending"
-      };
-
-      try {
-        const response = await fetch("http://localhost:5000/regularization", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(regularizationData)
-        });
-
-        if (response.ok) {
-          alert("Regularization request submitted successfully!");
-          closeRegularizationForm();
-          // Reset form
-          document.getElementById("regularizationForm").reset();
-          // Refresh dashboard data
-          await loadDashboardData();
-        } else {
-          alert("Failed to submit regularization request. Please try again.");
-        }
-      } catch (error) {
-        console.error("Error submitting regularization:", error);
-        alert("Error submitting regularization request. Please try again.");
-      }
-    });
     // Get current location for GPS tracking
     function getCurrentLocation() {
       return new Promise((resolve, reject) => {
@@ -545,7 +477,6 @@
         }
       });
     }
-
     // Check Wi-Fi connection status
     function getWifiStatus() {
       return navigator.onLine ? "connected" : "disconnected";
@@ -606,33 +537,38 @@
         const data = await res.json();
         console.log("✅ Attendance data received:", data);
         
-        if (data.isHalfDay) {
-          document.getElementById("attendanceStatus").textContent = "Half-Day (WiFi disconnected >2 times)";
-          document.getElementById("attendanceStatus").style.color = "orange";
-        } else {
-          document.getElementById("attendanceStatus").textContent = data.message || "Attendance marked successfully!";
-          document.getElementById("attendanceStatus").style.color = "green";
+        const attendanceEl = document.getElementById("attendanceStatus");
+        if (attendanceEl) {
+          if (data.isHalfDay) {
+            attendanceEl.textContent = "Half-Day (WiFi disconnected >2 times)";
+            attendanceEl.style.color = "orange";
+          } else {
+            attendanceEl.textContent = data.message || "Attendance marked successfully!";
+            attendanceEl.style.color = "green";
+          }
         }
         
         // Update button text based on punch status
         const button = document.querySelector('.attendance-card button');
-        if (data.attendance && data.attendance.punchIn && !data.attendance.punchOut) {
-          button.textContent = "Punch Out";
-        } else if (data.attendance && data.attendance.punchIn && data.attendance.punchOut) {
-          button.textContent = "Punch In";
+        if (button) {
+          if (data.attendance && data.attendance.punchIn && !data.attendance.punchOut) {
+            button.textContent = "Punch Out";
+          } else if (data.attendance && data.attendance.punchIn && data.attendance.punchOut) {
+            button.textContent = "Punch In";
+          }
         }
         
         // Emit real-time update
         if (typeof socket !== 'undefined') {
           socket.emit('attendance-update', {
             employee: currentUser.email,
-            status: data.attendance.status,
-            punchType: data.attendance.punchType
+            status: data.attendance ? data.attendance.status : (data.status || "Unknown"),
+            punchType: data.attendance ? data.attendance.punchType : punchType
           });
         }
         
         // Show success notification
-        showNotification(`Attendance ${data.attendance.status} successfully!`, 'success');
+        showNotification(`Attendance ${data.attendance && data.attendance.status ? data.attendance.status : 'updated'} successfully!`, 'success');
         
         // Refresh dashboard data after successful attendance marking
         await loadDashboardData();
@@ -656,15 +592,18 @@
       const totalAttendance = attendanceData.filter(att => att.status === "Present").length;
       const halfDays = attendanceData.filter(att => att.status === "Half-Day").length;
       
-      document.getElementById("totalAttendance").textContent = totalAttendance;
-      document.getElementById("halfDays").textContent = halfDays;
+      const totalEl = document.getElementById("totalAttendance");
+      const halfEl = document.getElementById("halfDays");
+      if (totalEl) totalEl.textContent = totalAttendance;
+      if (halfEl) halfEl.textContent = halfDays;
 
       // Load leave statistics
       const leavesRes = await fetch(`http://localhost:5000/leaves/employee/${currentUser.email}`);
       const leavesData = await leavesRes.json();
       
       const leavesTaken = leavesData.filter(leave => leave.status === "Approved").length;
-      document.getElementById("leavesTaken").textContent = leavesTaken;
+      const leavesEl = document.getElementById("leavesTaken");
+      if (leavesEl) leavesEl.textContent = leavesTaken;
 
     } catch (error) {
       console.error("Error loading employee stats:", error);
@@ -706,13 +645,15 @@
 
     } catch (error) {
       console.error("Error loading leave history:", error);
-      document.getElementById("leaveHistoryTable").innerHTML = "<tr><td colspan='4'>No leave requests found</td></tr>";
+      const tbody = document.getElementById("leaveHistoryTable");
+      if (tbody) tbody.innerHTML = "<tr><td colspan='4'>No leave requests found</td></tr>";
     }
   }
 
   // Display leave history
   function displayLeaveHistory(leaves) {
     const tbody = document.getElementById("leaveHistoryTable");
+    if (!tbody) return;
     tbody.innerHTML = "";
 
     if (leaves.length === 0) {
@@ -720,7 +661,7 @@
     } else {
       // Show only recent 5 leaves
       leaves.slice(0, 5).forEach(leave => {
-        const statusClass = leave.status.toLowerCase();
+        const statusClass = (leave.status || '').toLowerCase();
         const row = `<tr>
           <td>${new Date(leave.from).toLocaleDateString()}</td>
           <td>${new Date(leave.to).toLocaleDateString()}</td>
@@ -744,23 +685,25 @@
       
       const todayAttendance = attendanceData.find(att => att.employee === currentUser.email);
       
+      const attendanceEl = document.getElementById("attendanceStatus");
+      const button = document.querySelector('.attendance-card button');
+
       if (todayAttendance) {
         if (todayAttendance.punchIn && !todayAttendance.punchOut) {
-          document.getElementById("attendanceStatus").textContent = "Punched In";
-          document.getElementById("attendanceStatus").style.color = "green";
-          document.querySelector('.attendance-card button').textContent = "Punch Out";
+          if (attendanceEl) { attendanceEl.textContent = "Punched In"; attendanceEl.style.color = "green"; }
+          if (button) button.textContent = "Punch Out";
         } else if (todayAttendance.punchIn && todayAttendance.punchOut) {
-          document.getElementById("attendanceStatus").textContent = "Punched Out";
-          document.getElementById("attendanceStatus").style.color = "blue";
-          document.querySelector('.attendance-card button').textContent = "Punch In";
+          if (attendanceEl) { attendanceEl.textContent = "Punched Out"; attendanceEl.style.color = "blue"; }
+          if (button) button.textContent = "Punch In";
         } else {
-          document.getElementById("attendanceStatus").textContent = todayAttendance.status;
-          document.getElementById("attendanceStatus").style.color = todayAttendance.status === "Half-Day" ? "orange" : "green";
+          if (attendanceEl) {
+            attendanceEl.textContent = todayAttendance.status;
+            attendanceEl.style.color = todayAttendance.status === "Half-Day" ? "orange" : "green";
+          }
         }
       } else {
-        document.getElementById("attendanceStatus").textContent = "Not Marked";
-        document.getElementById("attendanceStatus").style.color = "red";
-        document.querySelector('.attendance-card button').textContent = "Punch In";
+        if (attendanceEl) { attendanceEl.textContent = "Not Marked"; attendanceEl.style.color = "red"; }
+        if (button) button.textContent = "Punch In";
       }
     } catch (error) {
       console.error("Error loading attendance status:", error);
@@ -782,11 +725,9 @@
   function startAutoRefresh() {
     setInterval(async () => {
       const now = Date.now();
-      // Only refresh if it's been more than 1 minute since last refresh
-      // and if the page is visible (not in background tab)
       if (now - lastRefreshTime > REFRESH_INTERVAL && !document.hidden) {
         console.log('🔄 Auto-refreshing dashboard...');
-      await loadDashboardData();
+        await loadDashboardData();
         lastRefreshTime = now;
       }
     }, 30000); // Check every 30 seconds
@@ -813,5 +754,87 @@
     window.location.href = "login.html";
   }
   </script>
+
+<!-- Add this section to your HTML -->
+<div style="margin: 20px 0; padding: 20px; border: 2px solid #74b9ff; border-radius: 10px;">
+  <h3>📍 Location & Wi-Fi Attendance</h3>
+  <input type="email" id="locationEmployeeEmail" placeholder="Your email" 
+         style="width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px;">
+  
+  <button onclick="markLocationAttendance()" id="locationPunchBtn"
+          style="background: #74b9ff; color: white; border: none; padding: 15px; border-radius: 8px; cursor: pointer; width: 100%;">
+    📍 Mark Location Attendance
+  </button>
+</div>
+
+<script>
+async function markLocationAttendance() {
+  const emailInput = document.getElementById('locationEmployeeEmail');
+  const email = emailInput ? emailInput.value : '';
+  if (!email) {
+    alert('Please enter your email');
+    return;
+  }
+
+  const button = document.getElementById('locationPunchBtn');
+  if (button) {
+    button.textContent = '🔄 Getting Location...';
+    button.disabled = true;
+  }
+
+  try {
+    // Get location
+    const position = await new Promise((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(resolve, reject, {
+        enableHighAccuracy: true,
+        timeout: 10000
+      });
+    });
+
+    const location = {
+      latitude: position.coords.latitude,
+      longitude: position.coords.longitude,
+      accuracy: position.coords.accuracy
+    };
+
+    // Get Wi-Fi (for demo, we'll prompt)
+    const wifiNetwork = prompt("Enter Wi-Fi network name (for demo)") || "Unknown";
+
+    if (button) button.textContent = '🔄 Verifying...';
+
+    const response = await fetch('http://localhost:5000/attendance/location-punch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        employee: email,
+        location: location,
+        wifiNetwork: wifiNetwork
+      })
+    });
+
+    const result = await response.json();
+
+    if (response.ok) {
+      alert(`✅ Success!\nWi-Fi: ${result.verification?.wifi?.network || 'N/A'}\nDistance: ${result.verification?.location?.distance || 'N/A'}m`);
+      if (button) { button.textContent = '✅ Attendance Verified'; button.style.background = '#00b894'; }
+    } else {
+      alert(`❌ Failed:\n${(result.failures || ['Unknown error']).join('\n')}`);
+      if (button) { button.textContent = '❌ Verification Failed'; button.style.background = '#e74c3c'; }
+    }
+
+  } catch (error) {
+    alert(`Error: ${error.message}`);
+    if (button) { button.textContent = '❌ Error'; button.style.background = '#e74c3c'; }
+  }
+
+  setTimeout(() => {
+    if (button) {
+      button.disabled = false;
+      button.textContent = '📍 Mark Location Attendance';
+      button.style.background = '#74b9ff';
+    }
+  }, 3000);
+}
+</script>
 </body>
 </html>

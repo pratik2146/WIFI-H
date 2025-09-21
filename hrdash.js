@@ -157,11 +157,20 @@ async function loadEmployees() {
     }
 
   // Update employee count
-  document.getElementById("totalEmployees").innerText = employees.length;
+  const totalEmployeesEl = document.getElementById("totalEmployees");
+  if (totalEmployeesEl) {
+    totalEmployeesEl.innerText = employees.length;
+  }
   } catch (error) {
     console.error("Error loading employees:", error);
-    document.getElementById("totalEmployees").innerText = "0";
-    document.getElementById("employeeTable").innerHTML = "<tr><td colspan='4'>Error loading employees</td></tr>";
+    const totalEmployeesEl = document.getElementById("totalEmployees");
+    if (totalEmployeesEl) {
+      totalEmployeesEl.innerText = "0";
+    }
+    const employeeTableEl = document.getElementById("employeeTable");
+    if (employeeTableEl) {
+      employeeTableEl.innerHTML = "<tr><td colspan='4'>Error loading employees</td></tr>";
+    }
   }
 }
 
@@ -227,11 +236,20 @@ async function loadLeaveRequests() {
 
     // Update pending requests count
     const pendingCount = leaves.filter(leave => leave.status === "Pending").length;
-    document.getElementById("pendingRequests").innerText = pendingCount;
+    const pendingRequestsEl = document.getElementById("pendingRequests");
+    if (pendingRequestsEl) {
+      pendingRequestsEl.innerText = pendingCount;
+    }
   } catch (error) {
     console.error("Error loading leave requests:", error);
-    document.getElementById("pendingRequests").innerText = "0";
-    document.getElementById("leaveRequestsTable").innerHTML = "<tr><td colspan='4'>Error loading leave requests</td></tr>";
+    const pendingRequestsEl = document.getElementById("pendingRequests");
+    if (pendingRequestsEl) {
+      pendingRequestsEl.innerText = "0";
+    }
+    const leaveRequestsTableEl = document.getElementById("leaveRequestsTable");
+    if (leaveRequestsTableEl) {
+      leaveRequestsTableEl.innerHTML = "<tr><td colspan='4'>Error loading leave requests</td></tr>";
+    }
   }
 }
 
@@ -243,10 +261,16 @@ async function loadAttendanceData() {
     const attendance = await res.json();
 
     const activeToday = attendance.filter(att => att.status === "Present" || att.status === "Half-Day").length;
-    document.getElementById("activeToday").innerText = activeToday;
+    const activeTodayEl = document.getElementById("activeToday");
+    if (activeTodayEl) {
+      activeTodayEl.innerText = activeToday;
+    }
   } catch (error) {
     console.error("Error loading attendance data:", error);
-    document.getElementById("activeToday").innerText = "0";
+    const activeTodayEl = document.getElementById("activeToday");
+    if (activeTodayEl) {
+      activeTodayEl.innerText = "0";
+    }
   }
 }
 
@@ -427,26 +451,62 @@ async function loadDashboardStats() {
     const res = await fetch("http://localhost:5000/dashboard/stats");
     const stats = await res.json();
 
-    document.getElementById("totalEmployees").innerText = stats.totalEmployees || 0;
-    document.getElementById("activeToday").innerText = stats.activeToday || 0;
-    document.getElementById("pendingRequests").innerText = stats.pendingLeaves || 0;
-    document.getElementById("leavesToday").innerText = stats.leavesToday || 0;
+    const totalEmployeesEl = document.getElementById("totalEmployees");
+    if (totalEmployeesEl) {
+      totalEmployeesEl.innerText = stats.totalEmployees || 0;
+    }
+    const activeTodayEl = document.getElementById("activeToday");
+    if (activeTodayEl) {
+      activeTodayEl.innerText = stats.activeToday || 0;
+    }
+    const pendingRequestsEl = document.getElementById("pendingRequests");
+    if (pendingRequestsEl) {
+      pendingRequestsEl.innerText = stats.pendingLeaves || 0;
+    }
+    const leavesTodayEl = document.getElementById("leavesToday");
+    if (leavesTodayEl) {
+      leavesTodayEl.innerText = stats.leavesToday || 0;
+    }
   } catch (error) {
     console.error("Error loading dashboard stats:", error);
-    document.getElementById("totalEmployees").innerText = "0";
-    document.getElementById("activeToday").innerText = "0";
-    document.getElementById("pendingRequests").innerText = "0";
-    document.getElementById("leavesToday").innerText = "0";
+    const totalEmployeesEl = document.getElementById("totalEmployees");
+    if (totalEmployeesEl) {
+      totalEmployeesEl.innerText = "0";
+    }
+    const activeTodayEl = document.getElementById("activeToday");
+    if (activeTodayEl) {
+      activeTodayEl.innerText = "0";
+    }
+    const pendingRequestsEl = document.getElementById("pendingRequests");
+    if (pendingRequestsEl) {
+      pendingRequestsEl.innerText = "0";
+    }
+    const leavesTodayEl = document.getElementById("leavesToday");
+    if (leavesTodayEl) {
+      leavesTodayEl.innerText = "0";
+    }
   }
 }
 
 // Load upcoming birthdays
 async function loadBirthdays() {
   try {
+    console.log("🎂 Loading upcoming birthdays...");
     const res = await fetch("http://localhost:5000/birthdays");
+    
+    if (!res.ok) {
+      throw new Error(`HTTP error! status: ${res.status}`);
+    }
+    
     const birthdays = await res.json();
+    console.log("🎂 Birthdays data:", birthdays);
 
     const birthdayList = document.getElementById("birthdayList");
+    if (!birthdayList) {
+      console.log("❌ Birthday list element not found");
+      return;
+    }
+    
     birthdayList.innerHTML = "";
 
     if (birthdays.length === 0) {
@@ -456,6 +516,12 @@ async function loadBirthdays() {
         const birthdayDate = new Date(birthday.dob);
         const today = new Date();
         const thisYearBirthday = new Date(today.getFullYear(), birthdayDate.getMonth(), birthdayDate.getDate());
+        
+        // If birthday has passed this year, show next year
+        if (thisYearBirthday < today) {
+          thisYearBirthday.setFullYear(today.getFullYear() + 1);
+        }
+        
         const daysUntil = Math.ceil((thisYearBirthday - today) / (1000 * 60 * 60 * 24));
         
         const li = document.createElement("li");
@@ -464,8 +530,11 @@ async function loadBirthdays() {
       });
     }
   } catch (error) {
-    console.error("Error loading birthdays:", error);
-    document.getElementById("birthdayList").innerHTML = "<li>Error loading birthdays ❌</li>";
+    console.error("❌ Error loading birthdays:", error);
+    const birthdayList = document.getElementById("birthdayList");
+    if (birthdayList) {
+      birthdayList.innerHTML = "<li>Error loading birthdays ❌</li>";
+    }
   }
 }
 
@@ -505,16 +574,35 @@ async function loadTodayAttendance() {
 
 // Take attendance functionality
 async function takeAttendance() {
-  const modal = document.getElementById("attendanceModal");
-  const dateInput = document.getElementById("attendanceDate");
-  
-  // Set today's date as default
-  dateInput.value = new Date().toISOString().split('T')[0];
-  
-  modal.style.display = "block";
-  
-  // Load all employees for attendance
-  await loadEmployeesForAttendance();
+  try {
+    const modal = document.getElementById("attendanceModal");
+    const dateInput = document.getElementById("attendanceDate");
+    
+    if (!modal) {
+      console.error("Attendance modal not found");
+      alert("Error: Attendance modal not found");
+      return;
+    }
+    
+    if (!dateInput) {
+      console.error("Attendance date input not found");
+      alert("Error: Attendance date input not found");
+      return;
+    }
+    
+    // Set today's date as default
+    if (dateInput) {
+      dateInput.value = new Date().toISOString().split('T')[0];
+    }
+    
+    modal.style.display = "block";
+    
+    // Load all employees for attendance
+    await safeLoadEmployeesForAttendance();
+  } catch (error) {
+    console.error("Error in takeAttendance:", error);
+    alert("Error opening attendance modal. Please try again.");
+  }
 }
 
 // Load employees for attendance modal
@@ -524,7 +612,18 @@ async function loadEmployeesForAttendance() {
     const employees = await res.json();
     
     const attendanceList = document.getElementById("attendanceList");
+    if (!attendanceList) {
+      console.error("Attendance list element not found");
+      alert("Error: Attendance list container not found");
+      return;
+    }
+    
     attendanceList.innerHTML = "";
+    
+    if (!employees || employees.length === 0) {
+      attendanceList.innerHTML = "<div class='attendance-employee'><span>No employees found</span></div>";
+      return;
+    }
     
     employees.forEach(emp => {
       const div = document.createElement("div");
@@ -541,39 +640,79 @@ async function loadEmployeesForAttendance() {
     });
   } catch (error) {
     console.error("Error loading employees for attendance:", error);
+    const attendanceList = document.getElementById("attendanceList");
+    if (attendanceList) {
+      attendanceList.innerHTML = "<div class='attendance-employee'><span>Error loading employees</span></div>";
+    }
   }
 }
 
 // Save attendance
 async function saveAttendance() {
   try {
-    const attendanceDate = document.getElementById("attendanceDate").value;
+    // Verify modal is still open and elements exist
+    const modal = document.getElementById("attendanceModal");
+    if (!modal || modal.style.display === "none") {
+      console.error("Attendance modal is not open");
+      alert("Error: Attendance modal is not open");
+      return;
+    }
+    
+    const attendanceDateEl = document.getElementById("attendanceDate");
+    if (!attendanceDateEl) {
+      console.error("Attendance date element not found");
+      alert("Error: Attendance date field not found");
+      return;
+    }
+    
+    const attendanceDate = attendanceDateEl.value;
+    if (!attendanceDate) {
+      alert("Please select a date for attendance");
+      return;
+    }
+    
     const attendanceStatuses = document.querySelectorAll('.attendance-status');
+    if (attendanceStatuses.length === 0) {
+      console.error("No attendance status elements found");
+      alert("Error: No employees found for attendance");
+      return;
+    }
     
     const attendanceRecords = [];
     attendanceStatuses.forEach(select => {
       const employee = select.dataset.employee;
       const status = select.value;
       
-      if (status !== 'Present') { // Only save non-present records
-        attendanceRecords.push({
-          employee: employee,
-          date: new Date(attendanceDate),
-          status: status
-        });
+      if (employee && status) {
+        if (status !== 'Present') { // Only save non-present records
+          attendanceRecords.push({
+            employee: employee,
+            date: new Date(attendanceDate),
+            status: status
+          });
+        }
       }
     });
     
+    if (attendanceRecords.length === 0) {
+      alert("No attendance changes to save");
+      return;
+    }
+    
     // Save attendance records
     for (const record of attendanceRecords) {
-      await fetch("http://localhost:5000/attendance", {
+      const response = await fetch("http://localhost:5000/attendance", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(record)
       });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to save attendance for ${record.employee}: ${response.status}`);
+      }
     }
     
-    alert("Attendance saved successfully!");
+    alert(`Attendance saved successfully for ${attendanceRecords.length} employees!`);
     
     // Emit real-time update
     if (typeof socket !== 'undefined') {
@@ -588,13 +727,18 @@ async function saveAttendance() {
     loadHRDashboardData(); // Refresh dashboard
   } catch (error) {
     console.error("Error saving attendance:", error);
-    alert("Error saving attendance");
+    alert(`Error saving attendance: ${error.message}`);
   }
 }
 
 // Close attendance modal
 function closeAttendanceModal() {
-  document.getElementById("attendanceModal").style.display = "none";
+  const modal = document.getElementById("attendanceModal");
+  if (modal) {
+    modal.style.display = "none";
+  } else {
+    console.error("Attendance modal not found for closing");
+  }
 }
 
 // Load all HR dashboard data
@@ -661,7 +805,9 @@ function setupEmployeeSearch() {
   
   if (clearBtn) {
     clearBtn.addEventListener("click", function() {
-      searchInput.value = "";
+      if (searchInput) {
+        searchInput.value = "";
+      }
       const rows = document.querySelectorAll("#employeeTable tr");
       rows.forEach(row => {
         row.style.display = "";
@@ -836,7 +982,8 @@ async function checkServerStatus() {
       headers: { 'Accept': 'application/json' }
     });
     
-    const statusEl = document.getElementById('serverStatus');
+  const statusEl = document.getElementById('serverStatus');
+  if (statusEl) {
     if (res.ok) {
       statusEl.textContent = '🟢 Online';
       statusEl.className = 'server-status online';
@@ -844,15 +991,141 @@ async function checkServerStatus() {
       statusEl.textContent = '🟡 Server Error';
       statusEl.className = 'server-status warning';
     }
-  } catch (error) {
-    const statusEl = document.getElementById('serverStatus');
+  }
+} catch (error) {
+  const statusEl = document.getElementById('serverStatus');
+  if (statusEl) {
     statusEl.textContent = '🔴 Offline';
     statusEl.className = 'server-status offline';
   }
 }
+}
+
+
+// Safe element value setter utility
+function safeSetElementValue(elementId, value, property = 'innerText') {
+  const element = document.getElementById(elementId);
+  if (element && element[property] !== undefined) {
+    try {
+      element[property] = value;
+      return true;
+    } catch (error) {
+      console.error(`Error setting ${property} for element ${elementId}:`, error);
+      return false;
+    }
+  } else {
+    console.warn(`Element ${elementId} not found or property ${property} not available`);
+    return false;
+  }
+}
+
+// Safe element innerHTML setter
+function safeSetElementHTML(elementId, html) {
+  return safeSetElementValue(elementId, html, 'innerHTML');
+}
+
+// Global error handler for null reference errors
+window.addEventListener('error', function(event) {
+  if (event.error && event.error.message && event.error.message.includes('Cannot set properties of null')) {
+    console.error('🚨 Null reference error caught:', event.error);
+    console.error('📍 Error location:', event.filename, 'Line:', event.lineno);
+    
+    // Show user-friendly error message
+    showNotification('An error occurred. Please refresh the page and try again.', 'error');
+    
+    // Prevent the error from crashing the page
+    event.preventDefault();
+    return true;
+  }
+});
+
+// Enhanced error boundary for async functions
+function safeAsyncWrapper(asyncFunction, functionName) {
+  return async function(...args) {
+    try {
+      return await asyncFunction.apply(this, args);
+    } catch (error) {
+      console.error(`❌ Error in ${functionName}:`, error);
+      
+      if (error.message && error.message.includes('Cannot set properties of null')) {
+        showNotification(`Error in ${functionName}: Element not found. Please refresh the page.`, 'error');
+      } else {
+        showNotification(`Error in ${functionName}: ${error.message}`, 'error');
+      }
+      
+      return null;
+    }
+  };
+}
+
+// Verify attendance modal elements exist
+function verifyAttendanceModal() {
+  const requiredElements = [
+    'attendanceModal',
+    'attendanceDate', 
+    'attendanceList',
+    'saveAttendanceBtn'
+  ];
+  
+  const missingElements = [];
+  
+  requiredElements.forEach(id => {
+    const element = document.getElementById(id);
+    if (!element) {
+      missingElements.push(id);
+    }
+  });
+  
+  if (missingElements.length > 0) {
+    console.error("Missing attendance modal elements:", missingElements);
+    return false;
+  }
+  
+  return true;
+}
+
+// Initialize all event listeners safely
+function initializeEventListeners() {
+  try {
+    // Close attendance modal
+    const closeAttendanceBtn = document.getElementById("closeAttendance");
+    if (closeAttendanceBtn) {
+      closeAttendanceBtn.addEventListener("click", closeAttendanceModal);
+    }
+    
+    // Save attendance button
+    const saveAttendanceBtn = document.getElementById("saveAttendanceBtn");
+    if (saveAttendanceBtn) {
+      saveAttendanceBtn.addEventListener("click", safeSaveAttendance);
+    }
+    
+    // Take attendance button
+    const takeAttendanceBtn = document.getElementById("takeAttendanceBtn");
+    if (takeAttendanceBtn) {
+      takeAttendanceBtn.addEventListener("click", safeTakeAttendance);
+    }
+    
+    console.log("✅ Event listeners initialized successfully");
+  } catch (error) {
+    console.error("❌ Error initializing event listeners:", error);
+  }
+}
+
+// Wrap critical functions with error boundaries
+const safeTakeAttendance = safeAsyncWrapper(takeAttendance, 'takeAttendance');
+const safeSaveAttendance = safeAsyncWrapper(saveAttendance, 'saveAttendance');
+const safeLoadEmployeesForAttendance = safeAsyncWrapper(loadEmployeesForAttendance, 'loadEmployeesForAttendance');
 
 // Call functions when page loads
 document.addEventListener("DOMContentLoaded", () => {
+  // Initialize event listeners first
+  initializeEventListeners();
+  
+  // Verify attendance modal is properly set up
+  if (!verifyAttendanceModal()) {
+    console.error("Attendance modal setup incomplete");
+  }
+  
   loadHRDashboardData();
   setupEmployeeSearch();
   startHRAutoRefresh();

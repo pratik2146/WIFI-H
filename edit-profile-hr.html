@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Edit Profile - HR Manager</title>
+  <link rel="stylesheet" href="stylehr.css">
+  <style>
+    /* HR-specific edit profile styling */
+    .edit-profile-container {
+      max-width: 700px;
+      margin: 40px auto;
+      padding: 0 20px;
+    }
+
+    .profile-form {
+      background: linear-gradient(135deg, #1f3a93 0%, #2c3e50 100%);
+      border-radius: 20px;
+      padding: 40px;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .profile-form::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+      animation: float 8s ease-in-out infinite;
+    }
+
+    .form-group {
+      margin-bottom: 25px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: white;
+      font-size: 1rem;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    }
+
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+      width: 100%;
+      padding: 12px 16px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.9);
+      color: #333;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: rgba(255, 255, 255, 0.8);
+      background: rgba(255, 255, 255, 0.95);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    }
+
+    .form-group input[type="file"] {
+      padding: 8px 12px;
+      background: rgba(255, 255, 255, 0.8);
+      border: 2px dashed rgba(255, 255, 255, 0.5);
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .form-group input[type="file"]:hover {
+      background: rgba(255, 255, 255, 0.9);
+      border-color: rgba(255, 255, 255, 0.8);
+    }
+
+    .form-group textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(45deg, #e74c3c, #c0392b);
+      color: white;
+      border: none;
+      padding: 15px 30px;
+      border-radius: 50px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 8px 25px rgba(231, 76, 60, 0.3);
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      margin-top: 20px;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 35px rgba(231, 76, 60, 0.4);
+      background: linear-gradient(45deg, #c0392b, #a93226);
+    }
+
+    .btn-primary:active {
+      transform: translateY(-1px);
+    }
+
+    #profilePreview {
+      display: block;
+      margin: 15px auto 0;
+      border: 3px solid rgba(255, 255, 255, 0.8);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      transition: all 0.3s ease;
+    }
+
+    #profilePreview:hover {
+      transform: scale(1.05);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .hr-badge {
+      background: rgba(231, 76, 60, 0.2);
+      color: white;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      display: inline-block;
+      margin-bottom: 20px;
+      border: 1px solid rgba(231, 76, 60, 0.3);
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-20px) rotate(180deg); }
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      .edit-profile-container {
+        margin: 20px auto;
+        padding: 0 15px;
+      }
+      
+      .profile-form {
+        padding: 30px 20px;
+      }
+      
+      .form-group input,
+      .form-group textarea,
+      .form-group select {
+        padding: 10px 14px;
+        font-size: 0.95rem;
+      }
+      
+      .btn-primary {
+        padding: 12px 25px;
+        font-size: 1rem;
+      }
+
+      .form-row {
+        grid-template-columns: 1fr;
+        gap: 15px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>👨‍💼 Edit Profile - HR Manager</h1>
+    <button onclick="goBack()" class="btn-small">⬅ Back to HR Dashboard</button>
+  </header>
+
+  <main class="edit-profile-container">
+    <div class="hr-badge">🏢 HR Manager Profile</div>
+    <form id="editProfileForm" class="profile-form">
+      <div class="form-group">
+        <label for="profilePhoto">📸 Profile Photo:</label>
+        <input type="file" id="profilePhoto" accept="image/*">
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="profileName">👤 Full Name:</label>
+          <input type="text" id="profileName" placeholder="Enter your full name">
+        </div>
+
+        <div class="form-group">
+          <label for="profileEmail">📧 Email Address:</label>
+          <input type="email" id="profileEmail" placeholder="Enter your email address">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="profilePhone">📱 Phone Number:</label>
+          <input type="tel" id="profilePhone" placeholder="Enter your phone number">
+        </div>
+
+        <div class="form-group">
+          <label for="profileDOB">🎂 Date of Birth:</label>
+          <input type="date" id="profileDOB">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="profileGender">⚥ Gender:</label>
+          <select id="profileGender">
+            <option value="">Select Gender</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="profileDept">🏢 Department:</label>
+          <input type="text" id="profileDept" placeholder="Enter your department">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="profileAddress">🏠 Address:</label>
+        <textarea id="profileAddress" rows="3" placeholder="Enter your complete address"></textarea>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="profilePosition">💼 Position:</label>
+          <input type="text" id="profilePosition" placeholder="Enter your job position">
+        </div>
+
+        <div class="form-group">
+          <label for="profileLevel">📊 HR Level:</label>
+          <select id="profileLevel">
+            <option value="">Select HR Level</option>
+            <option value="Junior HR">Junior HR</option>
+            <option value="Senior HR">Senior HR</option>
+            <option value="HR Manager">HR Manager</option>
+            <option value="HR Director">HR Director</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="profileSpecialization">🎯 Specialization:</label>
+        <input type="text" id="profileSpecialization" placeholder="e.g., Recruitment, Training, Benefits">
+      </div>
+
+      <button type="submit" class="btn-primary">💾 Save HR Profile</button>
+    </form>
+  </main>
+
+<script>
+const currentUser = JSON.parse(localStorage.getItem("currentUser")) || {};
+const hrProfile = JSON.parse(localStorage.getItem("hrProfile")) || {};
+
+// Function to return to HR dashboard
+function goBack() {
+  window.location.href = 'hrdash.html';
+}
+
+// Prefill existing data - prioritize HR-specific profile data
+document.getElementById("profileName").value = hrProfile.name || currentUser.name || currentUser.username || "";
+document.getElementById("profileEmail").value = hrProfile.email || currentUser.email || "";
+document.getElementById("profilePhone").value = hrProfile.phone || currentUser.phone || "";
+document.getElementById("profileDOB").value = hrProfile.dob ? new Date(hrProfile.dob).toISOString().split('T')[0] : (currentUser.dob ? new Date(currentUser.dob).toISOString().split('T')[0] : "");
+document.getElementById("profileGender").value = hrProfile.gender || currentUser.gender || "";
+document.getElementById("profileAddress").value = hrProfile.address || currentUser.address || "";
+document.getElementById("profileDept").value = hrProfile.department || currentUser.department || "";
+document.getElementById("profilePosition").value = hrProfile.position || currentUser.position || "";
+document.getElementById("profileLevel").value = hrProfile.level || currentUser.level || "";
+document.getElementById("profileSpecialization").value = hrProfile.specialization || currentUser.specialization || "";
+
+// Image compression function
+function compressImage(file, maxWidth = 300, maxHeight = 300, quality = 0.8) {
+  return new Promise((resolve) => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+    
+    img.onload = function() {
+      // Calculate new dimensions
+      let { width, height } = img;
+      if (width > height) {
+        if (width > maxWidth) {
+          height = (height * maxWidth) / width;
+          width = maxWidth;
+        }
+      } else {
+        if (height > maxHeight) {
+          width = (width * maxHeight) / height;
+          height = maxHeight;
+        }
+      }
+      
+      canvas.width = width;
+      canvas.height = height;
+      
+      // Draw and compress
+      ctx.drawImage(img, 0, 0, width, height);
+      const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+      resolve(compressedDataUrl);
+    };
+    
+    img.src = URL.createObjectURL(file);
+  });
+}
+
+// Handle profile picture preview with compression
+document.getElementById("profilePhoto").addEventListener("change", async function(e) {
+  const file = e.target.files[0];
+  if (file) {
+    // Check file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert("❌ Image is too large! Please select an image smaller than 5MB.");
+      e.target.value = ''; // Clear the input
+      return;
+    }
+    
+    try {
+      // Compress the image
+      const compressedImage = await compressImage(file, 300, 300, 0.8);
+      
+      // Create a preview image if it doesn't exist
+      let preview = document.getElementById("profilePreview");
+      if (!preview) {
+        preview = document.createElement("img");
+        preview.id = "profilePreview";
+        preview.style.cssText = "width: 100px; height: 100px; border-radius: 50%; margin-top: 10px; border: 3px solid rgba(255, 255, 255, 0.8);";
+        document.getElementById("profilePhoto").parentNode.appendChild(preview);
+      }
+      preview.src = compressedImage;
+      
+      // Store the compressed image for form submission
+      document.getElementById("profilePhoto").compressedData = compressedImage;
+      
+    } catch (error) {
+      console.error("Error compressing image:", error);
+      alert("❌ Error processing image. Please try a different image.");
+    }
+  }
+});
+
+document.getElementById("editProfileForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  console.log("👨‍💼 Starting HR profile update for:", currentUser.email);
+
+  // Handle profile picture upload
+  let profilePic = currentUser.profilePic || "https://randomuser.me/api/portraits/men/75.jpg";
+  const fileInput = document.getElementById("profilePhoto");
+  
+  // Use compressed image if available, otherwise use original file
+  if (fileInput.compressedData) {
+    profilePic = fileInput.compressedData;
+  } else if (fileInput.files[0]) {
+    const file = fileInput.files[0];
+    // Check file size again
+    if (file.size > 5 * 1024 * 1024) {
+      alert("❌ Image is too large! Please select an image smaller than 5MB.");
+      return;
+    }
+    
+    try {
+      profilePic = await compressImage(file, 300, 300, 0.8);
+    } catch (error) {
+      console.error("Error compressing image:", error);
+      alert("❌ Error processing image. Please try again.");
+      return;
+    }
+  }
+
+  const updatedData = {
+    name: document.getElementById("profileName").value,
+    email: document.getElementById("profileEmail").value,
+    phone: document.getElementById("profilePhone").value,
+    dob: document.getElementById("profileDOB").value,
+    gender: document.getElementById("profileGender").value,
+    address: document.getElementById("profileAddress").value,
+    department: document.getElementById("profileDept").value,
+    position: document.getElementById("profilePosition").value,
+    level: document.getElementById("profileLevel").value,
+    specialization: document.getElementById("profileSpecialization").value,
+    profilePic: profilePic
+  };
+
+  console.log("📤 HR profile data to update:", updatedData);
+
+  try {
+    // Save HR profile data to separate localStorage
+    const updatedHRProfile = { ...hrProfile, ...updatedData };
+    localStorage.setItem("hrProfile", JSON.stringify(updatedHRProfile));
+    
+    // Also update the main user data for basic info (name, email, phone)
+    const updatedUser = { 
+      ...currentUser, 
+      name: updatedData.name,
+      email: updatedData.email,
+      phone: updatedData.phone,
+      profilePic: updatedData.profilePic
+    };
+    localStorage.setItem("currentUser", JSON.stringify(updatedUser));
+    
+    // Update on server using the user endpoint (only basic info)
+    const serverData = {
+      name: updatedData.name,
+      email: updatedData.email,
+      phone: updatedData.phone,
+      profilePic: updatedData.profilePic
+    };
+    
+    const response = await fetch(`http://localhost:5000/user/${currentUser.email}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(serverData)
+    });
+
+    console.log("📥 HR profile update response status:", response.status);
+
+    if (response.ok) {
+      const responseData = await response.json();
+      console.log("✅ HR profile update successful:", responseData);
+      
+      alert("✅ HR profile updated successfully!");
+      
+      // Redirect to HR dashboard
+      goBack();
+    } else {
+      const errorText = await response.text();
+      console.error("❌ HR profile update failed:", errorText);
+      alert(`❌ Failed to update profile: ${response.status} - ${errorText}`);
+    }
+  } catch (error) {
+    console.error("❌ HR profile update error:", error);
+    alert(`❌ Error updating profile: ${error.message}`);
+  }
+});
+</script>
+
+</body>
+</html>

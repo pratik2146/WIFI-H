@@ -5,6 +5,27 @@ const cors = require("cors");
 const http = require("http");
 const socketIo = require("socket.io");
 
+// Define allowed office Wi-Fi SSIDs
+const OFFICE_WIFI_SSIDS = [
+  "Office_WiFi_1",
+  "Office_WiFi_2",
+  "Pratik" // <-- Add your hotspot SSID here for testing
+];
+const { exec } = require("child_process");
+
+// Function to get current Wi-Fi SSID
+function getCurrentSSID(callback) {
+  exec("netsh wlan show interfaces", (err, stdout, stderr) => {
+    if (err) {
+      console.error("Error fetching SSID:", err);
+      return callback(null);
+    }
+    const ssidMatch = stdout.match(/SSID\s+:\s(.*)/);
+    const ssid = ssidMatch ? ssidMatch[1].trim() : null;
+    callback(ssid);
+  });
+}
+
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
@@ -15,7 +36,8 @@ const io = socketIo(server, {
 });
 
 app.use(cors());
-app.use(bodyParser.json());
+app.use(bodyParser.json({ limit: '10mb' }));
+app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }));
 
 // Serve static files (HTML, CSS, JS)
 app.use(express.static('.'));
@@ -145,6 +167,19 @@ const RegularizationSchema = new mongoose.Schema({
   appliedDate: { type: Date, default: Date.now }
 });
 
+// After your existing RegularizationSchema:
+const CompanyConfigSchema = new mongoose.Schema({
+  companyWifi: { type: String, required: true, default: "Pratik" },
+  officeLocation: {
+    latitude: { type: Number, required: true, default: 18.5204 },
+    longitude: { type: Number, required: true, default: 73.8567 },
+    allowedRadius: { type: Number, default: 100 }
+  },
+  createdAt: { type: Date, default: Date.now }
+});
+
+const CompanyConfig = mongoose.model("CompanyConfig", CompanyConfigSchema);
+
 // Models
 const User = mongoose.model("User", UserSchema);
 const HRProfile = mongoose.model("HRProfile", HRProfileSchema);
@@ -153,7 +188,37 @@ const Leave = mongoose.model("Leave", LeaveSchema);
 const Attendance = mongoose.model("Attendance", AttendanceSchema);
 const Regularization = mongoose.model("Regularization", RegularizationSchema);
 
+// ADD THIS UTILITY FUNCTION HERE:
+// Utility function to calculate distance between two coordinates
+function calculateDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371e3; // Earth's radius in meters
+  const φ1 = lat1 * Math.PI/180;
+  const φ2 = lat2 * Math.PI/180;
+  const Δφ = (lat2-lat1) * Math.PI/180;
+  const Δλ = (lon2-lon1) * Math.PI/180;
+
+  const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+            Math.cos(φ1) * Math.cos(φ2) *
+            Math.sin(Δλ/2) * Math.sin(Δλ/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+  return R * c;
+}
+
 // Routes
+// Routes
+// after your Employee model is defined ⬇️
+
+// 👉 Get total employees count (for HR Dashboard)
+app.get("/employees/count", async (req, res) => {
+  try {
+    const count = await Employee.countDocuments();
+    res.json({ total: count });
+  } catch (err) {
+    console.error("Error fetching employee count:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
 
 // User Authentication Routes
 app.post("/register", async (req, res) => {
@@ -481,94 +546,108 @@ app.get("/attendance/employee/:email", async (req, res) => {
 
 // Advanced Attendance Punch with GPS/Wi-Fi tracking
 app.post("/attendance/punch", async (req, res) => {
-  try {
-    const { employee, punchType, location, wifiStatus } = req.body;
-    const today = new Date().toISOString().split('T')[0];
-    
-    // Check if attendance already exists for today
-    let attendance = await Attendance.findOne({ 
-      employee: employee, 
-      date: new Date(today) 
-    });
+  const { employee, punchType, location } = req.body;
+
+  getCurrentSSID(async (ssid) => {
+    console.log("Current SSID:", ssid);
+
+    const OFFICE_WIFI_SSIDS = ["Office_WiFi_1", "Pratik"];
+    if (!OFFICE_WIFI_SSIDS.includes(ssid)) {
+      return res.status(403).json({ message: "Attendance can only be marked from allowed Wi-Fi", status: "Failed" });
+    }
+    // Proceed with attendance marking
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      let attendance = await Attendance.findOne({ employee, date: new Date(today) });
+
+      if (!attendance) {
+        attendance = new Attendance({
+          employee,
+          date: new Date(today),
+          status: "Present",
+          punchType,
+          punchIn: new Date(),
+          location,
+          wifiDisconnections: [],
+          totalDisconnections: 0,
+          isHalfDay: false
+        });
+      } else {
+        // Update punch-in/punch-out
+        if (!attendance.punchIn) attendance.punchIn = new Date();
+        else if (!attendance.punchOut) attendance.punchOut = new Date();
+      }
+
+      await attendance.save();
+
+      // Broadcast attendance update
+      broadcastUpdate('attendance-updated', { 
+        employee: attendance.employee, 
+        status: attendance.status,
+        punchType: attendance.punchType
+      });
+
+      res.json({ message: "Attendance punched successfully", attendance });
+    } catch (error) {
+      res.status(500).json({ message: "Error marking attendance", error: error.message });
+    }
+  });
+});
+
+// Wi-Fi Based Attendance Marking
+app.post("/attendance/wifi-punch", async (req, res) => {
+  const { employee, punchType, location, wifiSSID } = req.body;
+  const today = new Date().toISOString().split('T')[0]; // Format: YYYY-MM-DD               
+    try {
+      const wifiSSID = req.body.wifiSSID; // SSID sent from client
+    // Check if connected to allowed Wi-Fi
+    const isConnectedToOfficeWiFi = OFFICE_WIFI_SSIDS.includes(wifiSSID);
+
+    if (!isConnectedToOfficeWiFi) {
+      // ❌ Reject punch if not on allowed Wi-Fi
+      return res.status(403).json({ 
+        message: "Attendance can only be marked from office Wi-Fi",
+        status: "Failed"
+      });
+    }
+
+    // Check if attendance already exists
+    let attendance = await Attendance.findOne({ employee, date: new Date(today) });
 
     if (!attendance) {
-      // Create new attendance record
+      // ✅ Create new attendance record
       attendance = new Attendance({
-        employee: employee,
+        employee,
         date: new Date(today),
         status: "Present",
-        punchType: punchType,
+        punchType,
         punchIn: new Date(),
-        location: location,
+        location,
         wifiDisconnections: [],
         totalDisconnections: 0,
         isHalfDay: false
       });
     } else {
-      // Update existing record
-      if (!attendance.punchIn) {
-        attendance.punchIn = new Date();
-        attendance.punchType = punchType;
-        attendance.location = location;
-      } else if (!attendance.punchOut) {
-        attendance.punchOut = new Date();
-      }
-    }
-
-    // Handle Wi-Fi disconnection tracking
-    if (wifiStatus === "disconnected") {
-      attendance.wifiDisconnections.push({
-        timestamp: new Date(),
-        duration: 0
-      });
-      attendance.totalDisconnections += 1;
-
-      // Auto-mark half-day if Wi-Fi disconnects more than 2 times
-      if (attendance.totalDisconnections > 2) {
-        attendance.status = "Half-Day";
-        attendance.isHalfDay = true;
-        
-        // Create automatic regularization request for WiFi disconnection
-        try {
-          const regularization = new Regularization({
-            employee: attendance.employee,
-            date: attendance.date,
-            reason: `Automatic regularization request due to WiFi disconnection (${attendance.totalDisconnections} times)`,
-            status: "Pending"
-          });
-          await regularization.save();
-          
-          console.log(`📝 Auto-created regularization request for ${attendance.employee} due to WiFi disconnection`);
-          
-          // Broadcast regularization request
-          broadcastUpdate('new-regularization-request', { 
-            regularization, 
-            employee: attendance.employee,
-            reason: 'WiFi disconnection'
-          });
-        } catch (regError) {
-          console.error("Error creating auto-regularization:", regError);
-        }
-      }
+      // Update punch-in/punch-out
+      if (!attendance.punchIn) attendance.punchIn = new Date();
+      else if (!attendance.punchOut) attendance.punchOut = new Date();
     }
 
     await attendance.save();
+
     // Broadcast attendance update
     broadcastUpdate('attendance-updated', { 
       employee: attendance.employee, 
-      status: attendance.status, 
-      punchType: attendance.punchType,
-      isHalfDay: attendance.isHalfDay 
+      status: attendance.status,
+      punchType: attendance.punchType
     });
-    res.json({ 
-      message: "Attendance punched successfully", 
-      attendance: attendance,
-      isHalfDay: attendance.isHalfDay
-    });
+
+    res.json({ message: "Attendance punched successfully", attendance });
   } catch (error) {
     res.status(500).json({ message: "Error marking attendance", error: error.message });
   }
 });
+
 
 // Regular attendance marking (fallback)
 app.post("/attendance", async (req, res) => {
@@ -630,8 +709,8 @@ app.get("/regularization", async (req, res) => {
     const regularizations = await Regularization.find().sort({ appliedDate: -1 });
     res.json(regularizations);
   } catch (error) {
-    res.status(500).json({ message: "Error fetching regularizations", error: error.message });
-  }
+    res.status(500).json({ message: "Error fetching regularizations", error: error.message });
+ }
 });
 
 // HR Dashboard Statistics
@@ -856,6 +935,190 @@ app.post("/test-data", async (req, res) => {
     res.status(500).json({ message: "Error creating test data", error: error.message });
   }
 });
+// Create test data endpoint (for debugging)
+app.post("/test-data", async (req, res) => {
+  // ... existing test-data code ...
+});
+
+// ADD THESE NEW ROUTES HERE:
+
+// Location & Wi-Fi verified attendance punch
+app.post("/attendance/location-punch", async (req, res) => {
+  try {
+    const { employee, location, wifiNetwork } = req.body;
+
+    console.log(`📍 Location punch attempt for: ${employee}`);
+
+    // Validate input
+    if (!employee || !location || !wifiNetwork) {
+      return res.status(400).json({ 
+        message: "Employee, location, and Wi-Fi network are required" 
+      });
+    }
+
+    // Ensure location has required properties
+    if (!location.latitude || !location.longitude) {
+      return res.status(400).json({
+        message: "Location must include latitude and longitude"
+      });
+    }
+
+    // Get company configuration
+    let companyConfig = await CompanyConfig.findOne({});
+    if (!companyConfig) {
+      companyConfig = new CompanyConfig({
+        companyWifi: "Pratik",
+        officeLocation: {
+          latitude: 18.5204,
+          longitude: 73.8567,
+          allowedRadius: 100
+        }
+      });
+      await companyConfig.save();
+      console.log("📝 Created default company configuration");
+    }
+
+    // Verify Wi-Fi network
+    const isWifiValid = wifiNetwork.toLowerCase() === companyConfig.companyWifi.toLowerCase();
+    
+    // Verify location
+    const distance = calculateDistance(
+      location.latitude,
+      location.longitude,
+      companyConfig.officeLocation.latitude,
+      companyConfig.officeLocation.longitude
+    );
+    const isLocationValid = distance <= companyConfig.officeLocation.allowedRadius;
+
+    console.log(`🔍 Verification Results:`, {
+      wifi: isWifiValid,
+      location: isLocationValid,
+      distance: Math.round(distance),
+      allowedRadius: companyConfig.officeLocation.allowedRadius
+    });
+
+    // Check if both verifications pass
+    if (!isWifiValid || !isLocationValid) {
+      const failureReasons = [];
+      if (!isWifiValid) {
+        failureReasons.push(`Wrong Wi-Fi network. Expected: ${companyConfig.companyWifi}, Got: ${wifiNetwork}`);
+      }
+      if (!isLocationValid) {
+        failureReasons.push(`Outside office premises. Distance: ${Math.round(distance)}m (Max: ${companyConfig.officeLocation.allowedRadius}m)`);
+      }
+
+      return res.status(403).json({
+        message: "Attendance verification failed",
+        failures: failureReasons,
+        verificationStatus: {
+          wifi: isWifiValid,
+          location: isLocationValid,
+          distance: Math.round(distance)
+        }
+      });
+    }
+
+    // Both verifications passed - proceed with attendance
+    const today = new Date().toISOString().split('T')[0];
+    let attendance = await Attendance.findOne({ 
+      employee: employee, 
+      date: new Date(today) 
+    });
+
+    if (!attendance) {
+      // Create new attendance record
+      attendance = new Attendance({
+        employee: employee,
+        date: new Date(today),
+        status: "Present",
+        punchType: "Location-WiFi",
+        punchIn: new Date(),
+        punchOut: null,
+        location: {
+          latitude: location.latitude,
+          longitude: location.longitude,
+          address: location.address || 'Office Location'
+        },
+        wifiDisconnections: [],
+        totalDisconnections: 0,
+        isHalfDay: false
+      });
+
+      console.log(`✅ New attendance created for ${employee}`);
+    } else {
+      // Update for punch out
+      if (!attendance.punchOut) {
+        attendance.punchOut = new Date();
+        console.log(`✅ Punch out recorded for ${employee}`);
+      }
+    }
+
+    await attendance.save();
+
+    // Broadcast attendance update
+    broadcastUpdate('location-attendance-updated', { 
+      employee: attendance.employee, 
+      status: attendance.status, 
+      punchType: attendance.punchType,
+      verified: true
+    });
+
+    res.json({ 
+      message: "Attendance marked successfully with location and Wi-Fi verification", 
+      attendance: attendance,
+      verification: {
+        wifi: { verified: true, network: wifiNetwork },
+        location: { 
+          verified: true, 
+          distance: Math.round(distance),
+          allowedRadius: companyConfig.officeLocation.allowedRadius 
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error("❌ Location punch error:", error);
+    res.status(500).json({ 
+      message: "Error marking attendance", 
+      error: error.message 
+    });
+  }
+});
+
+// Company configuration routes
+app.get("/company/config", async (req, res) => {
+  try {
+    let config = await CompanyConfig.findOne({});
+    if (!config) {
+      config = new CompanyConfig();
+      await config.save();
+    }
+    res.json(config);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching config", error: error.message });
+  }
+});
+
+app.post("/company/config", async (req, res) => {
+  try {
+    const { companyWifi, officeLocation } = req.body;
+    
+    let config = await CompanyConfig.findOne({});
+    if (!config) {
+      config = new CompanyConfig();
+    }
+    
+    if (companyWifi) config.companyWifi = companyWifi;
+    if (officeLocation) config.officeLocation = officeLocation;
+    
+    await config.save();
+    res.json({ message: "Configuration updated", config });
+  } catch (error) {
+    res.status(500).json({ message: "Error updating config", error: error.message });
+  }
+});
+
+console.log("📍 Location & Wi-Fi attendance verification enabled");
 
 // Start server
 const PORT = 5000;
@@ -863,3 +1126,4 @@ server.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
   console.log(`🔌 WebSocket server ready for real-time connections`);
 });
+

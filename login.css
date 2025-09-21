@@ -97,3 +97,9 @@ button:hover {
 .login-container a:hover {
   text-decoration: underline;
 }
+html, body {
+  height: 85%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
